@@ -6,11 +6,9 @@ This project focuses on implementing and evaluating different neural network arc
 ## 📂 Project Structure
 The repository is organized as follows:
 
-- **`NN_classes.py`** – Defines the neural network architectures, including AlexNet-based models.  
-- **`cleaning_algos.py`** – Contains EEG signal preprocessing techniques (e.g., wavelet transform, filtering).  
+- **`NN_classes.py`** – Defines the neural network architectures, including AlexNet-based models.    
 - **`import_data.py`** – Handles dataset loading and formatting.  
-- **`model_processing.py`** & **`model_processing_iowa.py`** – Manage model training and evaluation pipelines.  
-- **`results_evaluation.py`** – Implements performance metrics such as accuracy, F1-score, and confusion matrix.  
+- **`model_processing_iowa.py`** – Manage model training and evaluation pipelines.
 - **`wavelet_transform.py`** – Applies wavelet transformation for EEG feature extraction.  
 - **`data_set_preloader.py`** – Automates dataset preprocessing and loading.  
 - **`main.py`** – Entry point to execute the training and evaluation process.  
