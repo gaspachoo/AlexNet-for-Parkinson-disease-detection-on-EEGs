@@ -1,73 +1,8 @@
 import numpy as np
 import h5py
-
-def load_data_iowa(data_dir):
-    with h5py.File(data_dir, 'r') as f:
-        EEG_data = f['EEG']
-
-        num_channels = 63
-        num_groups = 2  # pd, control
-        num_patients = 14
-
-        table = []
-
-        for ch in range(num_channels):
-            # Déréférencement du channel
-            ch_ref = EEG_data[ch][0, 0] if EEG_data[ch].shape == (1, 1) else EEG_data[ch][0]
-            ch_data = f[ch_ref]
-
-            channel = []
-            for group_idx in range(num_groups):
-                group_ref = ch_data[group_idx][0] if ch_data[group_idx].shape == (1,) else ch_data[group_idx]
-                group_data = f[group_ref]
-
-                group = []
-                for patient_idx in range(num_patients):
-                    patient_ref = group_data[patient_idx][0] if group_data[patient_idx].shape == (1,) else group_data[patient_idx]
-                    signal = f[patient_ref][:]
-                    signal = signal.squeeze()
-                    group.append(signal)
-
-                channel.append(group)
-            table.append(channel)
-    table_t = transpose_and_flatten(table)  
-    print(len(table_t),len(table_t[0]),len(table_t[0][0]))
-    return table_t 
-
-def transpose_and_flatten(table):
-    num_channels = len(table)
-    num_groups = len(table[0])
-    num_patients = len(table[0][0])
-
-    # Étape 1 : Transpose -> table_transposed[group][patient][channel]
-    table_transposed = []
-    for group_idx in range(num_groups):
-        group = []
-        for patient_idx in range(num_patients):
-            patient = []
-            for ch_idx in range(num_channels):
-                signal = table[ch_idx][group_idx][patient_idx]
-                patient.append(signal)
-            group.append(patient)
-        table_transposed.append(group)
-
-    # Étape 2 : Flattening -> table_flattened[patient][channel]
-    table_flattened = []
-
-    for group in table_transposed:
-        for patient in group:
-            table_flattened.append(patient)
-
-    return table_flattened
-
-def load_labels_iowa():
-    sub_list = np.zeros(28)
-    for i in range(28):
-        if i<=13:
-            sub_list[i] = 1
-        
-    return sub_list
-
+import os
+import numpy as np
+import mne
 
 #### 1D:
 
@@ -122,7 +57,7 @@ def load_data_iowa_1D(data_dir, electrode_list_path, electrode_name):
                     raise TypeError(f"❌ Erreur : patient_ref is not a HDF5 reference but {type(patient_ref)}")
 
     print(f"✅ Extraction finished, {len(cpz_data)} signals loaded.")
-    return cpz_data  # Liste contenant 28 signaux (T,)
+    return cpz_data  # Liste containing 28 signals (T,)
 
 def load_labels_iowa_1D():
     """
@@ -132,5 +67,67 @@ def load_labels_iowa_1D():
     labels[:14] = 1  # 14 first patients = Parkinson
     return labels
 
+def load_bdf_1D(file_path, electrode_index):
+    """
+    Loads a .bdf file and extracts only the EEG signal for the specified electrode index.
+    """
+    raw = mne.io.read_raw_bdf(file_path, preload=True)
+    eeg_signal = raw.get_data()[electrode_index, :]  # Extract 1D signal for the electrode
+    return eeg_signal
 
-#lab = load_data_iowa_1D("./Data/iowa/IowaData.mat",'./Data/iowa/electrode_list.txt')
+def load_data_san_diego_1D(data_dir, electrode_list_path, electrode_name):
+    """
+    Loads 1D EEG signals from BDF files in `data_dir`.
+    Extracts only the signals for the specified electrode.
+    Labels are assigned as follows:
+    - 0: Healthy control (HC)
+    - 1: Parkinson's disease (PD) - session OFF
+    - 2: Parkinson's disease (PD) - session ON
+    """
+    
+    # Load the list of electrodes
+    with open(electrode_list_path, "r", encoding="utf-8") as f:
+        electrode_list = f.read().strip().split()
+    
+    print("📄 Electrode list loaded")
+    
+    if electrode_name not in electrode_list:
+        raise ValueError(f"⚠️ The {electrode_name} electrode is not in the electrode list.")
+    
+    electrode_index = electrode_list.index(electrode_name)  # Find the index of the electrode
+    print(f"✅ {electrode_name} found at index: {electrode_index}")
+    
+    data = []
+    labels = []
+    
+    for sub_folder in os.listdir(data_dir):
+        sub_path = os.path.join(data_dir, sub_folder)
+        if not os.path.isdir(sub_path):
+            continue
+        
+        if sub_folder.startswith("sub-hc"):  # Healthy control group
+            label = 0
+            for file in os.listdir(sub_path):
+                if file.endswith(".bdf"):
+                    file_path = os.path.join(sub_path, file)
+                    signal = load_bdf_1D(file_path, electrode_index)
+                    data.append(signal)
+                    labels.append(label)
+        
+        elif sub_folder.startswith("sub-pd"):  # Parkinson's disease group
+            for session in ["ses-off", "ses-on"]:
+                session_path = os.path.join(sub_path, session)
+                if os.path.exists(session_path):
+                    label = 1 if session == "ses-off" else 2
+                    for file in os.listdir(session_path):
+                        if file.endswith(".bdf"):
+                            file_path = os.path.join(session_path, file)
+                            signal = load_bdf_1D(file_path, electrode_index)
+                            data.append(signal)
+                            labels.append(label)
+    
+    data = np.array(data, dtype=object)
+    labels = np.array(labels)
+    print(f"✅ {len(data)} signals loaded.")
+    return data, labels
+
