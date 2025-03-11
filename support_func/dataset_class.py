@@ -4,10 +4,9 @@ from support_func.import_data import load_data_iowa_1D, load_data_sandiego_1D
 from support_func.filters import butter_bandpass_filter
 
 class EEGDataset_1D(Dataset):
-    def __init__(self, data_dir, electrode_name, electrode_list_path, T, transform=None, medication=None):
+    def __init__(self, data_dir, electrode_name, electrode_list_path, T, medication=None):
         super().__init__()
         self.T = T
-        self.transform = transform
         self.medication = medication
 
         if "iowa" in data_dir.lower():
@@ -52,8 +51,5 @@ class EEGDataset_1D(Dataset):
 
         eeg_1d = eeg_1d.astype(np.float32).reshape(-1, 1)  
         sample = {'eeg': eeg_1d, 'label': int(self.labels[idx])}  
-
-        if self.transform:
-            sample = self.transform(sample)
 
         return sample

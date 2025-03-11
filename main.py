@@ -1,4 +1,4 @@
-from support_func.NN_classes import AlexNetCustom
+from support_func.NN_classes import *
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -16,7 +16,7 @@ def train_and_validate(
     patience=5
 ):
     """
-    Train and validate AlexNetCustom on precomputed EEG data with early stopping and metrics.
+    Train and validate a model on precomputed EEG data with early stopping and metrics.
 
     Returns:
         model (nn.Module): Trained model.
@@ -40,7 +40,7 @@ def train_and_validate(
 
     print("Training")
     # Model, loss, optimizer, metrics
-    model = AlexNetCustom(num_classes=2).to(device)
+    model = AlexNetCustom2(num_classes=2).to(device)
     '''model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
     num_ftrs = model.fc.in_features
     model.fc = nn.Linear(num_ftrs, 2)  # 2 classes (HC vs. PD)'''
@@ -48,11 +48,10 @@ def train_and_validate(
 
     criterion = nn.CrossEntropyLoss()
 
-    # ✅ Define optimizer with separate learning rates for weights and biases
-    optimizer = optim.Adam([
-        {"params": [param for name, param in model.named_parameters() if "bias" not in name], "lr": learning_rate},
-        {"params": [param for name, param in model.named_parameters() if "bias" in name], "lr": learning_rate * 20},
-    ], lr=learning_rate)
+    # ✅ 
+    # ✅ Adam optimizer with L2 Regularization (Weight Decay)
+    optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)  # L2 reg
+
 
     f1_metric = MulticlassF1Score(num_classes=2, average='macro').to(device)
     confmat_metric = MulticlassConfusionMatrix(num_classes=2).to(device)
@@ -63,6 +62,8 @@ def train_and_validate(
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
+        correct_train = 0
+        total_train = 0
 
         for batch in train_loader:
             images, labels = batch  # ✅ Unpack tuple directly
@@ -78,13 +79,18 @@ def train_and_validate(
 
             running_loss += loss.item()
 
-        epoch_loss = running_loss / len(train_loader)
-
+            _, predicted = torch.max(outputs, 1)
+            correct_train += (predicted == labels).sum().item()
+            total_train += labels.size(0)
+            
+        train_loss = running_loss / len(train_loader)
+        train_accuracy = 100.0 * correct_train / total_train
+        
         # Validation phase
         model.eval()
         val_loss = 0.0
-        correct = 0
-        total = 0
+        correct_val = 0
+        total_val = 0
 
         f1_metric.reset()
         confmat_metric.reset()
@@ -96,27 +102,24 @@ def train_and_validate(
                 labels = labels.to(device, non_blocking=True).long()
 
                 outputs = model(images)
-                loss = criterion(outputs, labels)
-                val_loss += loss.item()
+                val_loss += criterion(outputs, labels).item()
 
                 _, predicted = torch.max(outputs, 1)
+                correct_val += (predicted == labels).sum().item()
+                total_val += labels.size(0)
+
                 f1_metric.update(predicted, labels)
                 confmat_metric.update(predicted, labels)
 
-                correct += (predicted == labels).sum().item()
-                total += labels.size(0)
-
         avg_val_loss = val_loss / len(val_loader)
-        val_accuracy = 100.0 * correct / total
+        val_accuracy = 100.0 * correct_val / total_val
         val_f1 = f1_metric.compute()
 
         print(f"Epoch [{epoch+1}/{num_epochs}] "
-              f"Train Loss: {epoch_loss:.4f}, "
-              f"Val Loss: {avg_val_loss:.4f}, "
-              f"Val Accuracy: {val_accuracy:.2f}%, "
-              f"Val F1: {val_f1:.4f}")
+            f"Train Loss: {train_loss:.4f}, Train Acc: {train_accuracy:.2f}% "
+            f"Val Loss: {avg_val_loss:.4f}, Val Acc: {val_accuracy:.2f}%, Val F1: {val_f1:.4f}")
 
-        # Early stopping
+        # 🛑 Early Stopping
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
             patience_counter = 0
@@ -132,9 +135,10 @@ def train_and_validate(
 
     # Final confusion matrix
     cm = confmat_metric.compute().cpu().numpy()
+    cm_normalized = cm.astype('float') / cm.sum(axis=1, keepdims=True)
     plt.figure(figsize=(6, 5))
     sns.heatmap(
-        cm, annot=True, fmt='d', cmap='Blues',
+        cm_normalized, annot=True,  fmt=".2f", cmap='Blues',
         xticklabels=["Control", "PD"], yticklabels=["Control", "PD"]
     )
     plt.xlabel('Predicted')
@@ -144,6 +148,6 @@ def train_and_validate(
 
     return model
 
-
 if __name__ == "__main__":
     trained_model = train_and_validate(num_epochs=15)
+    torch.save(trained_model.state_dict(), "./Models/model1.pth")
