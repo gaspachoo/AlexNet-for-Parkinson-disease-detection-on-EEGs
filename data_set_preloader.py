@@ -6,7 +6,7 @@ import support_func.wavelet_transform as wt
 
 
 # 1. Raw loading without transform
-raw_dataset = EEGDatasetIowa_1D(electrode_name= 'Fz',data_dir="./Data/iowa/IowaData.mat")
+raw_dataset = EEGDatasetIowa_1D(electrode_name= 'AFz',data_dir="./Data/iowa/IowaData.mat")
 
 
 print("Raw dataset Loaded, splitting")
