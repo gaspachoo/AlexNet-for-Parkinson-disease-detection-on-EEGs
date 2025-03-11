@@ -1,5 +1,5 @@
 from support_func.NN_classes import *
-from support_func.dataset_preloader import *
+from dataset_preloader import *
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -26,13 +26,9 @@ def train_and_validate(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Running on {device}")
     
-    number_samples = 9000
-    folder_path = "./Data/san_diego"
-    electrode_name='AF4'
-    electrode_list_path="./Data/san_diego/electrode_list.txt"
-    medication = 'on'
-    train_dataset = preload_dataset(folder_path,electrode_name,electrode_list_path,number_samples,None, medication)
-    val_dataset = preload_dataset(folder_path,electrode_name,electrode_list_path,number_samples,None,medication)
+    
+    train_dataset = torch.load("./Datasets_pt/train_sd_off.pt")
+    val_dataset = torch.load("./Datasets_pt/val_sd_off.pt")
 
 
     
@@ -48,7 +44,7 @@ def train_and_validate(
 
     print("Training")
     # Model, loss, optimizer, metrics
-    model = AlexNetCustom2(num_classes=2).to(device)
+    model = AlexNetCustom(num_classes=2).to(device)
     '''model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
     num_ftrs = model.fc.in_features
     model.fc = nn.Linear(num_ftrs, 2)  # 2 classes (HC vs. PD)'''

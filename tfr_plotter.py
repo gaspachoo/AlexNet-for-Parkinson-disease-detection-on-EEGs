@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # ✅ Load dataset (list of tuples)
-dataset_train = torch.load("./Datasets_pt/train_sd_on.pt")
-dataset_val = torch.load("./Datasets_pt/val_sd_on.pt")
+dataset_train = torch.load("./Datasets_pt/train_iowa.pt")
+dataset_val = torch.load("./Datasets_pt/val_iowa.pt")
 
 
 def plot_examples(dataset, title, num_samples=4):
