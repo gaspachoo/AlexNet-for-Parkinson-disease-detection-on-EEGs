@@ -68,6 +68,8 @@ class AlexNetCustom(nn.Module):
         self.fc2 = nn.Linear(4096, 4096)
         self.fc3 = nn.Linear(4096, num_classes)  # 2 outputs for your Table 2
         
+        self.sm = nn.Softmax(1)
+        
     def forward(self, x):
         # 1) Convolution layer 1 => ReLU => MaxPool
         x = self.conv1(x)        # shape: [B, 96, 55, 55] if input is 227x227
@@ -107,9 +109,9 @@ class AlexNetCustom(nn.Module):
         
         # FC3 -> ReLU (as described in the table, though unusual for final layer)
         x = self.fc3(x)          # shape: [B, 2]
-        #x = F.relu(x)            # Table 2 includes a ReLU for the last FC layer
+        x = F.relu(x)            # Table 2 includes a ReLU for the last FC layer
         
-        return x
+        return self.sm(x)
     
 
 class SimpleEEGCNN(nn.Module):

@@ -10,9 +10,9 @@ import seaborn as sns
 
 
 def train_and_validate(
-    num_epochs=10,
-    batch_size=32,
-    learning_rate=1e-2,
+    num_epochs=15,
+    batch_size=20,
+    learning_rate=1e-4,
     patience=5
 ):
     """
@@ -26,8 +26,8 @@ def train_and_validate(
     print(f"Running on {device}")
 
     # Load precomputed datasets
-    train_dataset = PrecomputedEEGDataset("train_WST_tfr.pt")
-    val_dataset = PrecomputedEEGDataset("val_WST_tfr.pt")
+    train_dataset = PrecomputedEEGDataset("train_WST_tfr_rgb.pt")
+    val_dataset = PrecomputedEEGDataset("val_WST_tfr_rgb.pt")
     
 
     print("Dataset loaded, creating DataLoaders...")
@@ -41,9 +41,15 @@ def train_and_validate(
 
     print("Training")
     # Model, loss, optimizer, metrics
+    # Model, loss, optimizer, metrics
     model = AlexNetCustom(num_classes=2).to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+
+    # ✅ Define optimizer with separate learning rates for weights and biases
+    optimizer = optim.Adam([
+        {"params": [param for name, param in model.named_parameters() if "bias" not in name], "lr": learning_rate},
+        {"params": [param for name, param in model.named_parameters() if "bias" in name], "lr": learning_rate * 20},
+    ], lr=learning_rate)
 
     f1_metric = MulticlassF1Score(num_classes=2, average='macro').to(device)
     confmat_metric = MulticlassConfusionMatrix(num_classes=2).to(device)

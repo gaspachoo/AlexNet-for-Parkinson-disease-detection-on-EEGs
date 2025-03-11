@@ -151,9 +151,6 @@ class EEGDatasetIowa_1D_RGB(Dataset):
         # Apply bandpass filtering
         eeg_1d = butter_bandpass_filter(eeg_1d, lowcut=0.5, highcut=40.0, fs=500.0, order=4)
 
-        # Normalize EEG before WST (to [-1,1] range)
-        eeg_1d = eeg_1d / np.max(np.abs(eeg_1d))
-
         # Ensure consistent length (T=60600) - truncate or pad with zeros
         if len(eeg_1d) > self.T:
             eeg_1d = eeg_1d[:self.T]  # Truncate

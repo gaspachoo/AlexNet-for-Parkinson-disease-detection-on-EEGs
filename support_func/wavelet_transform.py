@@ -3,7 +3,9 @@ import torch
 import torch.nn.functional as F
 from kymatio import Scattering1D
 import matplotlib.pyplot as plt
-import numpy
+
+
+
 
 class WaveletScatteringTransform:
     def __init__(self, T, J=6, Q=3, out_shape=(227, 227, 3)):
@@ -194,21 +196,26 @@ class WaveletScatteringTransformTFR_RGB:
         }
 
 class WaveletScatteringTransformTFR:
-    def __init__(self, T, J=6, Q=1, frontend='torch'):
+    def __init__(self, T, J=6, Q=1, frontend='torch', global_abs_max=None):
         self.T = T
         self.J = J
         self.Q = Q
-        self.scattering = Scattering1D(
-            J=self.J, shape=(self.T,), Q=self.Q, frontend=frontend
-        )
+        self.global_abs_max = global_abs_max
+        self.scattering = Scattering1D(J=self.J, shape=(self.T,), Q=self.Q, frontend=frontend)
+        
 
     def __call__(self, sample):
         label = sample['label']
         # sample['eeg'] assumed shape (T,) or (T,1). We'll assume (T,).
         eeg_data = sample['eeg'].astype(np.float32)
-
+        
+        # Global normalization
+        if self.global_abs_max is not None and self.global_abs_max > 1e-9:
+            eeg_data = eeg_data / self.global_abs_max
+        
         # Turn into Torch tensor: [1, T]
         x = torch.from_numpy(eeg_data).unsqueeze(0)
+        
         x = x.squeeze(-1)
         
         #print("DEBUG: x.shape =", x.shape,flush= True)

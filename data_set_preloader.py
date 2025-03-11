@@ -5,8 +5,9 @@ from support_func.model_processing_iowa import EEGDatasetIowa, EEGDatasetIowa_1D
 import support_func.wavelet_transform as wt
 
 
+number_samples = 2000 #10sec
 # 1. Raw loading without transform
-raw_dataset = EEGDatasetIowa_1D(electrode_name= 'AFz',data_dir="./Data/iowa/IowaData.mat")
+raw_dataset = EEGDatasetIowa_1D_RGB(electrode_name= 'AFz',data_dir="./Data/iowa/IowaData.mat",T=number_samples)
 
 
 print("Raw dataset Loaded, splitting")
@@ -19,7 +20,19 @@ train_idx, val_idx = train_test_split(indices, stratify=labels, test_size=6/28, 
 
 print("Applying WST")
 # 3. Application WST + save the train
-transform_wst = wt.WaveletScatteringTransformTFR(T=60600, J=3, Q=2)
+
+def compute_global_absmax(dataset):
+    global_abs_max = 0.0
+    for i in range(len(dataset)):
+        eeg_np = dataset[i]['eeg']  # shape (T,)
+        cur_abs_max = np.max(np.abs(eeg_np))
+        if cur_abs_max > global_abs_max:
+            global_abs_max = cur_abs_max
+    return global_abs_max
+
+global_m = compute_global_absmax(raw_dataset)
+
+transform_wst = wt.WaveletScatteringTransformTFR_RGB(T=number_samples, J=3, Q=2)
 
 def preprocess_and_save(indices, dataset, transform, out_filename):
     tfr_list = []
@@ -41,5 +54,5 @@ def preprocess_and_save(indices, dataset, transform, out_filename):
     print(f"Saved {out_filename} with shape {all_tfr.shape} and labels shape {all_labels.shape}")
 
 # 5) Process + save
-preprocess_and_save(train_idx, raw_dataset, transform_wst, "train_WST_tfr.pt")
-preprocess_and_save(val_idx, raw_dataset, transform_wst, "val_WST_tfr.pt")
+preprocess_and_save(train_idx, raw_dataset, transform_wst, "train_WST_tfr_rgb.pt")
+preprocess_and_save(val_idx, raw_dataset, transform_wst, "val_WST_tfr_rgb.pt")
