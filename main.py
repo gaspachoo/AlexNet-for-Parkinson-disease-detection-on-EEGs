@@ -1,4 +1,5 @@
 from support_func.NN_classes import *
+from support_func.dataset_preloader import *
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -25,8 +26,15 @@ def train_and_validate(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Running on {device}")
     
-    train_dataset = torch.load("./Datasets_pt/train_sd_on.pt")
-    val_dataset = torch.load("./Datasets_pt/val_sd_on.pt")
+    number_samples = 9000
+    folder_path = "./Data/san_diego"
+    electrode_name='AF4'
+    electrode_list_path="./Data/san_diego/electrode_list.txt"
+    medication = 'on'
+    train_dataset = preload_dataset(folder_path,electrode_name,electrode_list_path,number_samples,None, medication)
+    val_dataset = preload_dataset(folder_path,electrode_name,electrode_list_path,number_samples,None,medication)
+
+
     
 
     print("Dataset loaded, creating DataLoaders...")
@@ -48,10 +56,8 @@ def train_and_validate(
 
     criterion = nn.CrossEntropyLoss()
 
-    # ✅ 
     # ✅ Adam optimizer with L2 Regularization (Weight Decay)
-    optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)  # L2 reg
-
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-4)  # L2 reg
 
     f1_metric = MulticlassF1Score(num_classes=2, average='macro').to(device)
     confmat_metric = MulticlassConfusionMatrix(num_classes=2).to(device)
