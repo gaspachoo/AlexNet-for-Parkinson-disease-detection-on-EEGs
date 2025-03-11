@@ -1,13 +1,13 @@
 import torch
 import numpy as np
 from sklearn.model_selection import train_test_split
-from support_func.model_processing import *
+from support_func.dataset_class import *
 import support_func.wavelet_transform as wt
 
 
-number_samples = 100000
+number_samples = 90000
 # 1. Raw loading without transform
-raw_dataset = EEGDatasetSanDiego_Medication("./Data/san_diego",electrode_name='AF4', medication=False, T=number_samples)
+raw_dataset = EEGDataset_1D("./Data/san_diego",electrode_name='AF4', electrode_list_path="./Data/san_diego/electrode_list.txt", medication='on', T=number_samples)
 
 print("Raw dataset Loaded, splitting")
 
@@ -31,27 +31,29 @@ def compute_global_absmax(dataset):
 
 global_m = compute_global_absmax(raw_dataset)
 
-transform_wst = wt.WaveletScatteringTransformTFR(T=number_samples, J=3, Q=2,rgb=True)
+transform_wst = wt.WaveletScatteringTransform(T=number_samples, J=3, Q=2)
 
 def preprocess_and_save(indices, dataset, transform, out_filename):
-    tfr_list = []
-    label_list = []
+    images_list = []
+    labels_list = []
 
     for idx in indices:
         sample = dataset[idx]      # e.g. {"eeg": shape (60600,), "label": 0/1}
         out = transform(sample)    # => {"tfr": shape [scales, time'], "label": int}
 
-        tfr_list.append(out["tfr"])
-        label_list.append(out["label"])
+        images_list.append(out["image"])
+        labels_list.append(out["label"])
 
     # Stack along dimension 0 => shape [N, scales, time']
-    all_tfr = torch.stack(tfr_list, dim=0)
-    all_labels = torch.tensor(label_list, dtype=torch.long)
+    all_images = torch.stack(images_list, dim=0)
+    all_labels = torch.tensor(labels_list, dtype=torch.long)
 
     # Save
-    torch.save({"tfr": all_tfr, "labels": all_labels}, out_filename)
-    print(f"Saved {out_filename} with shape {all_tfr.shape} and labels shape {all_labels.shape}")
+    #torch.save({"images": all_images, "labels": all_labels}, out_filename)
+    torch.save(list(zip(all_images,all_labels)), out_filename)
+
+    print(f"Saved {out_filename} with shape {all_images.shape} and labels shape {all_labels.shape}")
 
 # 5) Process + save
-preprocess_and_save(train_idx, raw_dataset, transform_wst, "./Datasets_pt/train_sd_off_rgb.pt")
-preprocess_and_save(val_idx, raw_dataset, transform_wst, "./Datasets_pt/val_sd_off_rgb.pt")
+preprocess_and_save(train_idx, raw_dataset, transform_wst, "./Datasets_pt/train_sd_on.pt")
+preprocess_and_save(val_idx, raw_dataset, transform_wst, "./Datasets_pt/val_sd_on.pt")

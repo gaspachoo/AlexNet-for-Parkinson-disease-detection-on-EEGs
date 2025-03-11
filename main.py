@@ -1,5 +1,4 @@
-from support_func.model_processing import PrecomputedEEGDataset
-from support_func.NN_classes import AlexNetCustom, SimpleEEGCNN
+from support_func.NN_classes import AlexNetCustom
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -25,10 +24,9 @@ def train_and_validate(
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Running on {device}")
-
-    # Load precomputed datasets
-    train_dataset = PrecomputedEEGDataset("./Datasets_pt/train_sd_off_rgb.pt")
-    val_dataset = PrecomputedEEGDataset("./Datasets_pt/val_sd_off_rgb.pt")
+    
+    train_dataset = torch.load("./Datasets_pt/train_sd_on.pt")
+    val_dataset = torch.load("./Datasets_pt/val_sd_on.pt")
     
 
     print("Dataset loaded, creating DataLoaders...")
@@ -42,10 +40,10 @@ def train_and_validate(
 
     print("Training")
     # Model, loss, optimizer, metrics
-    #model = AlexNetCustom(num_classes=2).to(device)
-    model = models.resnet18(pretrained=True)
+    model = AlexNetCustom(num_classes=2).to(device)
+    '''model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
     num_ftrs = model.fc.in_features
-    model.fc = nn.Linear(num_ftrs, 2)  # 2 classes (HC vs. PD)
+    model.fc = nn.Linear(num_ftrs, 2)  # 2 classes (HC vs. PD)'''
     model = model.to(device)
 
     criterion = nn.CrossEntropyLoss()
@@ -67,8 +65,9 @@ def train_and_validate(
         running_loss = 0.0
 
         for batch in train_loader:
-            images = batch["image"].to(device, non_blocking=True).float()
-            labels = batch["label"].to(device, non_blocking=True).long()
+            images, labels = batch  # ✅ Unpack tuple directly
+            images = images.to(device, non_blocking=True).float()
+            labels = labels.to(device, non_blocking=True).long()
 
             optimizer.zero_grad()
             outputs = model(images)
@@ -92,8 +91,9 @@ def train_and_validate(
 
         with torch.no_grad():
             for batch in val_loader:
-                images = batch["image"].to(device, non_blocking=True).float()
-                labels = batch["label"].to(device, non_blocking=True).long()
+                images, labels = batch  # ✅ Unpack tuple directly
+                images = images.to(device, non_blocking=True).float()
+                labels = labels.to(device, non_blocking=True).long()
 
                 outputs = model(images)
                 loss = criterion(outputs, labels)

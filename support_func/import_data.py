@@ -20,8 +20,8 @@ def load_data_iowa_1D(data_dir, electrode_list_path, electrode_name):
     if electrode_name not in electrode_list:
         raise ValueError(f"⚠️ The {electrode_name} electrode is not in the file electrode_list.txt.")
 
-    cpz_index = electrode_list.index(electrode_name)  # Find CPz index
-    print(f"✅ {electrode_name} found at the index : {cpz_index}")
+    electrode_index = electrode_list.index(electrode_name)  # Find electrode index
+    print(f"✅ {electrode_name} found at the index : {electrode_index}")
 
     with h5py.File(data_dir, 'r') as f:
         EEG_data = f['EEG']
@@ -30,10 +30,10 @@ def load_data_iowa_1D(data_dir, electrode_list_path, electrode_name):
         num_groups = 2  # PD and control
         num_patients = 14
 
-        cpz_data = []  # List to story only CPz's eegs
+        electrode_data = []  # List to story only electrode's eegs
 
 
-        ch_ref = EEG_data[cpz_index][0, 0] if EEG_data[cpz_index].shape == (1, 1) else EEG_data[cpz_index][0]
+        ch_ref = EEG_data[electrode_index][0, 0] if EEG_data[electrode_index].shape == (1, 1) else EEG_data[electrode_index][0]
         print(f"🔗 Reference of {electrode_name} got :", ch_ref)
 
         if isinstance(ch_ref, h5py.Reference):
@@ -52,21 +52,16 @@ def load_data_iowa_1D(data_dir, electrode_list_path, electrode_name):
                 patient_ref = group_data[patient_idx][0] if group_data[patient_idx].shape == (1,) else group_data[patient_idx]
                 if isinstance(patient_ref, h5py.Reference):
                     signal = f[patient_ref][:].squeeze()  # Extract and ensure it is a vector
-                    cpz_data.append(signal)
+                    electrode_data.append(signal)
                 else:
                     raise TypeError(f"❌ Erreur : patient_ref is not a HDF5 reference but {type(patient_ref)}")
 
-    print(f"✅ Extraction finished, {len(cpz_data)} signals loaded.")
-    return cpz_data  # Liste containing 28 signals (T,)
-
-def load_labels_iowa_1D():
-    """
-    Set up the labels for the 28 patients.
-    """
+    print(f"✅ Extraction finished, {len(electrode_data)} signals loaded.")
+    
     labels = np.zeros(28)
-    labels[:14] = 1  # 14 first patients = Parkinson
-    return labels
-
+    labels[:14] = 1
+    return electrode_data, labels
+ 
 def load_bdf_1D(file_path, electrode_index):
     """
     Loads a .bdf file and extracts only the EEG signal for the specified electrode index.
