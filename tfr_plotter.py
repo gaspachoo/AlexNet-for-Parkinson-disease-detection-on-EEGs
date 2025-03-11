@@ -2,8 +2,8 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 
-dataset1 = torch.load("train_sd_off.pt")
-dataset2 = torch.load("val_sd_off.pt")
+dataset1 = torch.load("./Datasets_pt/train_sd_off.pt")
+dataset2 = torch.load("./Datasets_pt/val_sd_off.pt")
 
 def plot_wst_examples_colormap(dataset, title, num_samples=4, num_rows= 2):
     images = dataset['tfr']

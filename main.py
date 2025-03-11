@@ -27,8 +27,8 @@ def train_and_validate(
     print(f"Running on {device}")
 
     # Load precomputed datasets
-    train_dataset = PrecomputedEEGDataset("train_sd_off_rgb.pt")
-    val_dataset = PrecomputedEEGDataset("val_sd_off_rgb.pt")
+    train_dataset = PrecomputedEEGDataset("./Datasets_pt/train_sd_off_rgb.pt")
+    val_dataset = PrecomputedEEGDataset("./Datasets_pt/val_sd_off_rgb.pt")
     
 
     print("Dataset loaded, creating DataLoaders...")

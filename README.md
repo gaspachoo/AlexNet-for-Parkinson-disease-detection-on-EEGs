@@ -14,7 +14,8 @@ The repository is organized as follows:
 - **`main.py`** – Entry point to execute the training and evaluation process.  
 - **`tfr_plotter.py`** – Generates visualizations for EEG signal transformations.  
 - **`support_func/`** – Contains utility functions supporting various aspects of the pipeline.  
-- **`Data/`** – Stores the datasets used for training and testing.  
+- **`Data/`** – Stores the datasets source folders used for preparing the training and testing.
+- **`Datasets_pt/`** – Stores the datasets in .pt format, ready to be used for training and testing.  
 
 ## 📊 Datasets Used
 The project utilizes EEG data from the following sources:
