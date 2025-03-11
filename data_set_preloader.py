@@ -53,5 +53,5 @@ def preprocess_and_save(indices, dataset, transform, out_filename):
     print(f"Saved {out_filename} with shape {all_tfr.shape} and labels shape {all_labels.shape}")
 
 # 5) Process + save
-preprocess_and_save(train_idx, raw_dataset, transform_wst, "train_sd_off_rgb.pt")
-preprocess_and_save(val_idx, raw_dataset, transform_wst, "val_sd_off_rgb.pt")
+preprocess_and_save(train_idx, raw_dataset, transform_wst, "./Datasets_pt/train_sd_off_rgb.pt")
+preprocess_and_save(val_idx, raw_dataset, transform_wst, "./Datasets_pt/val_sd_off_rgb.pt")
