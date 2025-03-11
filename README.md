@@ -37,7 +37,7 @@ pip install torch torchvision numpy scipy matplotlib seaborn
 
 1. Clone the repository:  
    ```bash
-   git clone https://github.com/your-repo-name.git
+   git clone https://github.com/gaspachoo/Internship-MU-Assignment-2.git
    cd your-repo-name
    ```
 2. Preprocess the EEG dataset:  
@@ -50,11 +50,11 @@ pip install torch torchvision numpy scipy matplotlib seaborn
    ```
 4. Evaluate results:  
    ```bash
-   # Use the function in **`tfr_plotter.py`**
+   # Use **`tfr_plotter.py`**
    ```
 
 ## 📈 Results & Performance Analysis
-Results are plot in **`tfr_plotter.py`**, including confusion matrices and classification reports.  
+Results are plot after executing **`main.py`**, including confusion matrices and classification reports.  
 The impact of different preprocessing techniques (e.g., wavelet transform, filtering) is analyzed in **`tfr_plotter.py`**.
 
 ## 🤝 Contributing
