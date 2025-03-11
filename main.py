@@ -3,6 +3,7 @@ from support_func.NN_classes import AlexNetCustom, SimpleEEGCNN
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torchvision.models as models
 from torch.utils.data import DataLoader
 from torchmetrics.classification import MulticlassF1Score, MulticlassConfusionMatrix
 import matplotlib.pyplot as plt
@@ -41,8 +42,12 @@ def train_and_validate(
 
     print("Training")
     # Model, loss, optimizer, metrics
-    # Model, loss, optimizer, metrics
-    model = AlexNetCustom(num_classes=2).to(device)
+    #model = AlexNetCustom(num_classes=2).to(device)
+    model = models.resnet18(pretrained=True)
+    num_ftrs = model.fc.in_features
+    model.fc = nn.Linear(num_ftrs, 2)  # 2 classes (HC vs. PD)
+    model = model.to(device)
+
     criterion = nn.CrossEntropyLoss()
 
     # ✅ Define optimizer with separate learning rates for weights and biases
