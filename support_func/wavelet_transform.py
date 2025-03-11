@@ -215,7 +215,7 @@ class WaveletScatteringTransformTFR:
         if self.global_abs_max is not None and self.global_abs_max > 1e-9:
             eeg_data = eeg_data / self.global_abs_max
         scaling_factor = 1e5  # Adjust based on min/max values
-        eeg_data *= scaling_factor
+        #eeg_data *= scaling_factor
 
         # Turn into Torch tensor: [1, T]
         x = torch.from_numpy(eeg_data).unsqueeze(0)
