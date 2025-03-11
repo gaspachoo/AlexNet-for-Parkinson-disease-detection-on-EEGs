@@ -5,10 +5,9 @@ from support_func.model_processing import *
 import support_func.wavelet_transform as wt
 
 
-number_samples = 70000 #10sec
+number_samples = 100000
 # 1. Raw loading without transform
 raw_dataset = EEGDatasetSanDiego_Medication("./Data/san_diego",electrode_name='AF4', medication=False, T=number_samples)
-
 
 print("Raw dataset Loaded, splitting")
 
