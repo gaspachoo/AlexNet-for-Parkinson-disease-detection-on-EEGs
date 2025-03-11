@@ -8,7 +8,7 @@ The repository is organized as follows:
 
 - **`NN_classes.py`** – Defines the neural network architectures, including AlexNet-based models.    
 - **`import_data.py`** – Handles dataset loading and formatting.  
-- **`model_processing_iowa.py`** – Manage model training and evaluation pipelines.
+- **`model_processing.py`** – Manage model training and evaluation pipelines.
 - **`wavelet_transform.py`** – Applies wavelet transformation for EEG feature extraction.  
 - **`data_set_preloader.py`** – Automates dataset preprocessing and loading.  
 - **`main.py`** – Entry point to execute the training and evaluation process.  
