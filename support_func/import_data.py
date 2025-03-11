@@ -75,14 +75,12 @@ def load_bdf_1D(file_path, electrode_index):
     eeg_signal = raw.get_data()[electrode_index, :]  # Extract 1D signal for the electrode
     return eeg_signal
 
-def load_data_san_diego_1D(data_dir, electrode_list_path, electrode_name):
+def load_data_sandiego_1D(data_dir, electrode_list_path, electrode_name):
     """
-    Loads 1D EEG signals from BDF files in `data_dir`.
-    Extracts only the signals for the specified electrode.
-    Labels are assigned as follows:
-    - 0: Healthy control (HC)
-    - 1: Parkinson's disease (PD) - session OFF
-    - 2: Parkinson's disease (PD) - session ON
+    Loads 1D EEG signals from BDF files in `data_dir`, considering the San Diego folder structure:
+    - sub-hcXX/ses-hc/eeg/*.bdf → Healthy control (HC, label=0)
+    - sub-pdXX/ses-off/eeg/*.bdf → Parkinson OFF (label=1)
+    - sub-pdXX/ses-on/eeg/*.bdf → Parkinson ON (label=2)
     """
     
     # Load the list of electrodes
@@ -99,6 +97,8 @@ def load_data_san_diego_1D(data_dir, electrode_list_path, electrode_name):
     
     data = []
     labels = []
+    mne.set_log_level("ERROR")  # Suppress info messages, show only errors
+
     
     for sub_folder in os.listdir(data_dir):
         sub_path = os.path.join(data_dir, sub_folder)
@@ -107,18 +107,19 @@ def load_data_san_diego_1D(data_dir, electrode_list_path, electrode_name):
         
         if sub_folder.startswith("sub-hc"):  # Healthy control group
             label = 0
-            for file in os.listdir(sub_path):
-                if file.endswith(".bdf"):
-                    file_path = os.path.join(sub_path, file)
-                    signal = load_bdf_1D(file_path, electrode_index)
-                    data.append(signal)
-                    labels.append(label)
+            session_path = os.path.join(sub_path, "ses-hc", "eeg")
+            if os.path.exists(session_path):
+                for file in os.listdir(session_path):
+                    if file.endswith(".bdf"):
+                        file_path = os.path.join(session_path, file)
+                        signal = load_bdf_1D(file_path, electrode_index)
+                        data.append(signal)
+                        labels.append(label)
         
         elif sub_folder.startswith("sub-pd"):  # Parkinson's disease group
-            for session in ["ses-off", "ses-on"]:
-                session_path = os.path.join(sub_path, session)
+            for session, label in [("ses-off", 1), ("ses-on", 2)]:
+                session_path = os.path.join(sub_path, session, "eeg")
                 if os.path.exists(session_path):
-                    label = 1 if session == "ses-off" else 2
                     for file in os.listdir(session_path):
                         if file.endswith(".bdf"):
                             file_path = os.path.join(session_path, file)
@@ -130,4 +131,3 @@ def load_data_san_diego_1D(data_dir, electrode_list_path, electrode_name):
     labels = np.array(labels)
     print(f"✅ {len(data)} signals loaded.")
     return data, labels
-

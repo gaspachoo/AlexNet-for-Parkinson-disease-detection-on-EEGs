@@ -1,4 +1,4 @@
-from support_func.model_processing_iowa import PrecomputedEEGDataset
+from support_func.model_processing import PrecomputedEEGDataset
 from support_func.NN_classes import AlexNetCustom, SimpleEEGCNN
 import torch
 import torch.nn as nn
@@ -26,8 +26,8 @@ def train_and_validate(
     print(f"Running on {device}")
 
     # Load precomputed datasets
-    train_dataset = PrecomputedEEGDataset("train_WST_tfr_rgb.pt")
-    val_dataset = PrecomputedEEGDataset("val_WST_tfr_rgb.pt")
+    train_dataset = PrecomputedEEGDataset("train_sd_off_rgb.pt")
+    val_dataset = PrecomputedEEGDataset("val_sd_off_rgb.pt")
     
 
     print("Dataset loaded, creating DataLoaders...")
@@ -141,4 +141,4 @@ def train_and_validate(
 
 
 if __name__ == "__main__":
-    trained_model = train_and_validate(num_epochs=10)
+    trained_model = train_and_validate(num_epochs=15)

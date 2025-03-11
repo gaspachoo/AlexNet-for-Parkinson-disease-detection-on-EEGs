@@ -126,8 +126,8 @@ def plot_wst_examples_rgb(dataset, title, num_samples=2):
     plt.tight_layout()
     plt.show()
 
-dataset1 = torch.load("train_WST_tfr.pt")
-dataset2 = torch.load("val_WST_tfr.pt")
+dataset1 = torch.load("train_sd.pt")
+dataset2 = torch.load("val_sd.pt")
 
 def plot_wst_examples_colormap(dataset, title, num_samples=4):
     images = dataset['tfr']
@@ -138,10 +138,11 @@ def plot_wst_examples_colormap(dataset, title, num_samples=4):
     
     # Select indices for each class (HC: 0, PD: 1)
     hc_indices = [i for i, label in enumerate(labels) if label == 0][:num_samples]
-    pd_indices = [i for i, label in enumerate(labels) if label == 1][:num_samples]
-
+    pdoff_indices = [i for i, label in enumerate(labels) if label == 1][:num_samples]
+    pdon_indices = [i for i, label in enumerate(labels) if label == 2][:num_samples]
+    print(len(hc_indices),len(pdoff_indices),len(pdon_indices))
     # Create subplots
-    fig, axes = plt.subplots(2, num_samples, figsize=(5 * num_samples, 8), sharex=True, sharey=True)
+    fig, axes = plt.subplots(3, num_samples, figsize=(5 * num_samples, 8), sharex=True, sharey=True)
     
     # Ensure axes is a 2D NumPy array for consistent indexing
     axes = np.array(axes)
@@ -160,13 +161,27 @@ def plot_wst_examples_colormap(dataset, title, num_samples=4):
         else:
             ax.set_yticklabels([])
 
-    # Plot PD samples (second row)
-    for idx, sample_idx in enumerate(pd_indices):
+    # Plot PD off samples (second row)
+    for idx, sample_idx in enumerate(pdoff_indices):
         ax = axes[1, idx]
         img = images[sample_idx].numpy()
 
         im = ax.imshow(img, cmap='viridis', aspect='auto', origin='lower', vmin=vmin, vmax=vmax)
-        ax.set_title(f"PD Sample {sample_idx}")
+        ax.set_title(f"PD OFF Sample {sample_idx}")
+
+        # Remove redundant labels
+        if idx == 0:
+            ax.set_ylabel("Frequency")
+        else:
+            ax.set_yticklabels([])
+            
+    # Plot PD on samples (third row)
+    for idx, sample_idx in enumerate(pdon_indices):
+        ax = axes[2, idx]
+        img = images[sample_idx].numpy()
+
+        im = ax.imshow(img, cmap='viridis', aspect='auto', origin='lower', vmin=vmin, vmax=vmax)
+        ax.set_title(f"PD ON Sample {sample_idx}")
 
         # Remove redundant labels
         if idx == 0:

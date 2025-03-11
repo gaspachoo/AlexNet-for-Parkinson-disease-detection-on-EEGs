@@ -196,12 +196,14 @@ class WaveletScatteringTransformTFR_RGB:
         }
 
 class WaveletScatteringTransformTFR:
-    def __init__(self, T, J=6, Q=1, frontend='torch', global_abs_max=None):
+    def __init__(self, T, J=6, Q=1, frontend='torch', global_abs_max=None, rgb=False):
         self.T = T
         self.J = J
         self.Q = Q
         self.global_abs_max = global_abs_max
+        self.rgb = rgb
         self.scattering = Scattering1D(J=self.J, shape=(self.T,), Q=self.Q, frontend=frontend)
+
         
 
     def __call__(self, sample):
@@ -212,7 +214,9 @@ class WaveletScatteringTransformTFR:
         # Global normalization
         if self.global_abs_max is not None and self.global_abs_max > 1e-9:
             eeg_data = eeg_data / self.global_abs_max
-        
+        scaling_factor = 1e5  # Adjust based on min/max values
+        eeg_data *= scaling_factor
+
         # Turn into Torch tensor: [1, T]
         x = torch.from_numpy(eeg_data).unsqueeze(0)
         
@@ -244,8 +248,25 @@ class WaveletScatteringTransformTFR:
             align_corners=False
         ).squeeze(0).squeeze(0)  # Remove batch & channel dims
         
-        # For direct TFR plotting, we might just return it as is:
-        return {
-            'tfr': grayscale_tensor,   # shape: [num_scales, T']
-            'label': label
-        }
+        if self.rgb:
+            colormap = plt.cm.viridis  # Get the colormap
+            tensor_rgb = colormap(grayscale_tensor.numpy())[...,:3]  # Get RGB channels (ignore alpha)
+            
+            # Convert RGB NumPy array to PyTorch tensor
+            tensor_rgb_torch = torch.tensor(tensor_rgb, dtype=torch.float32)  # Shape: (227, 227, 3)
+
+            # If you need it in (3, 227, 227) format (channel-first for deep learning models)
+            tensor_rgb_torch = tensor_rgb_torch.permute(2, 0, 1)  # Shape: (3, 227, 227)
+            
+            # For direct TFR plotting, we might just return it as is:
+            return {
+                'tfr': tensor_rgb_torch,   # shape: [num_scales, T']
+                'label': label
+            }
+        else:
+            # For direct TFR plotting, we might just return it as is:
+            return {
+                'tfr': grayscale_tensor,   # shape: [num_scales, T']
+                'label': label
+            }
+        
