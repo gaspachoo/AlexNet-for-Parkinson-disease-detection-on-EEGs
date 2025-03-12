@@ -50,7 +50,7 @@ pip install torch torchvision numpy scipy matplotlib seaborn
    ```bash
    python main.py
    ```
-4. Evaluate results:  
+4. Plot data:  
    ```bash
    # Use **`tfr_plotter.py`**
    ```
