@@ -31,7 +31,7 @@ def process_and_save(indices, dataset,transform):
     
     return all_images,all_labels
 
-def preload_dataset(folder_path,electrode_name,electrode_list_path,number_samples,save_path= None, medication=None):
+def preload_dataset(folder_path,electrode_name,electrode_list_path,number_samples,save=False, medication=None):
     # 1. Raw loading without transform
     raw_dataset = EEGDataset_1D(folder_path,electrode_name, electrode_list_path, number_samples, medication)
 
@@ -41,7 +41,7 @@ def preload_dataset(folder_path,electrode_name,electrode_list_path,number_sample
     labels = np.array([raw_dataset[i]["label"] for i in range(len(raw_dataset))])
     indices = np.arange(len(raw_dataset))
 
-    train_idx, val_idx = train_test_split(indices, stratify=labels, test_size=0.2, random_state=42)
+    train_idx, val_idx = train_test_split(indices, stratify=labels, test_size=0.2, random_state=42) ## Select here the test size
 
     print("Applying WST")
     
@@ -49,22 +49,42 @@ def preload_dataset(folder_path,electrode_name,electrode_list_path,number_sample
     #global_m = compute_global_absmax(raw_dataset) -> global normalization could be added ad an argument in WST
     transform_wst = wt.WaveletScatteringTransform(number_samples, J=3, Q=2)
 
-    all_images,all_labels = process_and_save(train_idx,raw_dataset,transform_wst)
-    dataset = list(zip(all_images,all_labels))
+    train_images,train_labels = process_and_save(train_idx,raw_dataset,transform_wst)
+    val_images, val_labels = process_and_save(val_idx,raw_dataset,transform_wst)
+    train_dataset = list(zip(train_images,train_labels))
+    val_dataset = list(zip(val_images,val_labels))
     
-    if save_path != None:
-        torch.save(dataset, save_path)
-        print(f"Saved {save_path} with shape {all_images.shape} and labels shape {all_labels.shape}")
+    if save == True:
+        
+        #Define paths
+        path = './Datasets_pt/'
+        if "iowa" in folder_path:
+            train_path = path + 'train_iowa.pt'
+            val_path = path + 'val_iowa.pt'
+        else:
+            if medication == None:
+                train_path = path + 'train_sd_onandoff.pt'
+                val_path = path + 'val_sd_onandoff.pt'
+            elif medication == "on":
+                train_path = path + 'train_sd_on.pt'
+                val_path = path + 'val_sd_on.pt'
+            else :
+                train_path = path + 'train_sd_off.pt'
+                val_path = path + 'val_sd_off.pt'
+            
+        torch.save(train_dataset, train_path)
+        print(f"Saved {train_path} with shape {train_images.shape} and labels shape {train_labels.shape}")
+        torch.save(val_dataset, val_path)
+        print(f"Saved {val_path} with shape {val_images.shape} and labels shape {val_labels.shape}")
 
-    return dataset
+    return train_dataset,val_dataset
 
 
 if __name__ == "__main__":
-    number_samples = 2048 #max for iowa : 60600, max for san_diego : 92160
-    folder_path = "./Data/iowa/IowaData.mat"
+    number_samples = 5000 #max for iowa : 60600, max for san_diego : 92160
+    folder_path = "./Data/iowa/IowaData.mat" #iowa/IowaData.mat or san_diego
     electrode_name='AF4'
-    electrode_list_path="./Data/san_diego/electrode_list.txt"
-    medication = 'on'
-    train = preload_dataset(folder_path,electrode_name,electrode_list_path,number_samples,"./Datasets_pt/train_iowa.pt", medication)
-    validate = preload_dataset(folder_path,electrode_name,electrode_list_path,number_samples, "./Datasets_pt/val_iowa.pt",medication)
+    electrode_list_path="./Data/iowa/electrode_list.txt" ## Do not forget to change too
+    medication = 'None' # For iowa, None, for san_diego, on or off or None (not None for model training)
+    train_set,validate_set = preload_dataset(folder_path,electrode_name,electrode_list_path,number_samples,True, medication)
 

@@ -11,6 +11,8 @@ import seaborn as sns
 
 
 def train_and_validate(
+    train_dataset,
+    val_dataset,
     num_epochs=15,
     batch_size=20,
     learning_rate=1e-4,
@@ -27,13 +29,7 @@ def train_and_validate(
     print(f"Running on {device}")
     
     
-    train_dataset = torch.load("./Datasets_pt/train_sd_off.pt")
-    val_dataset = torch.load("./Datasets_pt/val_sd_off.pt")
-
-
-    
-
-    print("Dataset loaded, creating DataLoaders...")
+    print("Creating DataLoaders...")
 
     train_loader = DataLoader(
         train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True
@@ -151,5 +147,11 @@ def train_and_validate(
     return model
 
 if __name__ == "__main__":
-    trained_model = train_and_validate(num_epochs=15)
-    torch.save(trained_model.state_dict(), "./Models/model1.pth")
+    
+    train_dataset = torch.load("./Datasets_pt/train_iowa.pt")
+    val_dataset = torch.load("./Datasets_pt/val_iowa.pt")
+    
+    print("Dataset loaded...")
+    
+    trained_model = train_and_validate(train_dataset, val_dataset, num_epochs=15)
+    #torch.save(trained_model.state_dict(), "./Models/model1.pth")
