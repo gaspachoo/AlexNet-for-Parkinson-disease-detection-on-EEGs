@@ -5,11 +5,10 @@ from kymatio import Scattering1D
 import matplotlib.pyplot as plt
 
 class WaveletScatteringTransform:
-    def __init__(self, T, J=6, Q=1, frontend='torch', global_abs_max=None):
+    def __init__(self, T, J=8, Q=16, frontend='torch'):
         self.T = T
         self.J = J
         self.Q = Q
-        self.global_abs_max = global_abs_max
         self.scattering = Scattering1D(J=self.J, shape=(self.T,), Q=self.Q, frontend=frontend)
 
     def __call__(self, sample):
@@ -17,11 +16,10 @@ class WaveletScatteringTransform:
         # sample['eeg'] assumed shape (T,) or (T,1). We'll assume (T,).
         eeg_data = sample['eeg'].astype(np.float32)
         
-        # Global normalization
-        #if self.global_abs_max is not None and self.global_abs_max > 1e-9:
-        #    eeg_data = eeg_data / self.global_abs_max
+
+        eeg_data = eeg_data / np.max(np.abs(eeg_data))
         scaling_factor = 1e5  # Adjust based on min/max values
-        eeg_data *= scaling_factor
+        #eeg_data *= scaling_factor
 
         # Turn into Torch tensor: [1, T]
         x = torch.from_numpy(eeg_data).unsqueeze(0)
@@ -54,7 +52,7 @@ class WaveletScatteringTransform:
             align_corners=False
         ).squeeze(0).squeeze(0)  # Remove batch & channel dims
         
-        grayscale_tensor = (grayscale_tensor - grayscale_tensor.min()) / (grayscale_tensor.max() - grayscale_tensor.min() + 1e-8)
+        #grayscale_tensor = (grayscale_tensor - grayscale_tensor.min()) / (grayscale_tensor.max() - grayscale_tensor.min() + 1e-8)
 
 
         
