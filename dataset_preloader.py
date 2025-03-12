@@ -5,14 +5,18 @@ from support_func.dataset_class import *
 import support_func.wavelet_transform as wt
 
 
-def compute_global_absmax(dataset):
-    global_abs_max = 0.0
-    for i in range(len(dataset)):
-        eeg_np = dataset[i]['eeg']  # shape (T,)
-        cur_abs_max = np.max(np.abs(eeg_np))
-        if cur_abs_max > global_abs_max:
-            global_abs_max = cur_abs_max
-    return global_abs_max
+def global_norm(images_tensor):
+    """Apply global normalization across all images in a tensor."""
+    if not isinstance(images_tensor, torch.Tensor):
+        raise TypeError(f"Expected a tensor, but got {type(images_tensor)}")
+
+    # Compute global min/max from the tensor itself
+    global_min = images_tensor.min()
+    global_max = images_tensor.max()
+
+    # Normalize all images based on global min/max
+    return (images_tensor - global_min) / (global_max - global_min + 1e-8)
+
 
 def process_and_save(indices, dataset,transform):
     images_list = []
@@ -47,10 +51,12 @@ def preload_dataset(folder_path,electrode_name,electrode_list_path,number_sample
     
     # 3. Wavelest Scattering Transform
     #global_m = compute_global_absmax(raw_dataset) -> global normalization could be added ad an argument in WST
-    transform_wst = wt.WaveletScatteringTransform(number_samples, J=3, Q=2)
+    transform_wst = wt.WaveletScatteringTransform(number_samples, J=8, Q=24)
 
     train_images,train_labels = process_and_save(train_idx,raw_dataset,transform_wst)
+    #train_images = global_norm(train_images)
     val_images, val_labels = process_and_save(val_idx,raw_dataset,transform_wst)
+    #val_images = global_norm(val_images)
     train_dataset = list(zip(train_images,train_labels))
     val_dataset = list(zip(val_images,val_labels))
     
@@ -81,9 +87,9 @@ def preload_dataset(folder_path,electrode_name,electrode_list_path,number_sample
 
 
 if __name__ == "__main__":
-    number_samples = 5000 #max for iowa : 60600, max for san_diego : 92160
-    folder_path = "./Data/iowa/IowaData.mat" #iowa/IowaData.mat or san_diego
-    electrode_name='AF4'
+    number_samples = 2000 #max for iowa : 60600, max for san_diego : 92160
+    folder_path = "./Data/iowa/IowaData.mat" #./Data/iowa/IowaData.mat or ./Data/san_diego
+    electrode_name='AFz'
     electrode_list_path="./Data/iowa/electrode_list.txt" ## Do not forget to change too
     medication = 'None' # For iowa, None, for san_diego, on or off or None (not None for model training)
     train_set,validate_set = preload_dataset(folder_path,electrode_name,electrode_list_path,number_samples,True, medication)

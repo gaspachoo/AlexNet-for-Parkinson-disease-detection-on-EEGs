@@ -13,11 +13,11 @@ class WaveletScatteringTransform:
 
     def __call__(self, sample):
         label = sample['label']
-        # sample['eeg'] assumed shape (T,) or (T,1). We'll assume (T,).
+        # sample['eeg'] assumed shape (T,).
         eeg_data = sample['eeg'].astype(np.float32)
         
 
-        eeg_data = eeg_data / np.max(np.abs(eeg_data))
+        #eeg_data = eeg_data / np.max(np.abs(eeg_data))
         scaling_factor = 1e5  # Adjust based on min/max values
         #eeg_data *= scaling_factor
 
@@ -52,12 +52,12 @@ class WaveletScatteringTransform:
             align_corners=False
         ).squeeze(0).squeeze(0)  # Remove batch & channel dims
         
-        #grayscale_tensor = (grayscale_tensor - grayscale_tensor.min()) / (grayscale_tensor.max() - grayscale_tensor.min() + 1e-8)
+        grayscale_tensor = (grayscale_tensor - grayscale_tensor.min()) / (grayscale_tensor.max() - grayscale_tensor.min() + 1e-8)
 
 
         
         colormap = plt.cm.viridis  # Get the colormap
-        tensor_rgb = colormap(grayscale_tensor.numpy())[...,:3]  # Get RGB channels (ignore alpha)
+        tensor_rgb = colormap(grayscale_tensor.numpy())[...,:3]  # Get RGB channels
         
         # Convert RGB NumPy array to PyTorch tensor
         tensor_rgb_torch = torch.tensor(tensor_rgb, dtype=torch.float32)  # Shape: (227, 227, 3)

@@ -7,7 +7,7 @@ dataset_train = torch.load("./Datasets_pt/train_iowa.pt")
 dataset_val = torch.load("./Datasets_pt/val_iowa.pt")
 
 
-def plot_examples(dataset, title, num_samples=4):
+def plot_examples(dataset, title, num_samples=11):
     # ✅ Unzip dataset into images and labels
     images, labels = zip(*dataset)  
     images = torch.stack(images)  # Convert list to tensor (num_samples, 3, 227, 227)
@@ -26,7 +26,7 @@ def plot_examples(dataset, title, num_samples=4):
         pdon_indices = [i for i, label in enumerate(labels) if label == 2][:num_samples]
 
     # ✅ Create subplots
-    fig, axes = plt.subplots(num_rows, num_samples, figsize=(5 * num_samples, 8), sharex=True, sharey=True)
+    fig, axes = plt.subplots(num_rows, num_samples, figsize=(5 * num_samples, 5 * num_rows), sharex=True, sharey=True)
     axes = np.array(axes)  # Ensure axes is a 2D NumPy array for indexing
 
     # ✅ Function to plot RGB images
@@ -39,7 +39,7 @@ def plot_examples(dataset, title, num_samples=4):
 
     # ✅ Plot HC samples (first row)
     for idx, sample_idx in enumerate(hc_indices):
-        im = plot_rgb(axes[0, idx], images[sample_idx], f"HC Sample {sample_idx}")
+        im = plot_rgb(axes[0, idx], images[sample_idx], f"HC {sample_idx}")
         # Remove redundant labels
         if idx == 0:
             axes[0,idx].set_ylabel("Frequency")
@@ -50,7 +50,7 @@ def plot_examples(dataset, title, num_samples=4):
         # ✅ Plot PD samples (second row)
         for idx, sample_idx in enumerate(pd_indices):
             med = 'On' if sorted(set(labels.numpy()))[1] == 2 else 'Off'
-            im = plot_rgb(axes[1, idx], images[sample_idx], f"PD {med} Sample {sample_idx}")
+            im = plot_rgb(axes[1, idx], images[sample_idx], f"PD {med} {sample_idx}")
             # Remove redundant labels
             if idx == 0:
                 axes[1,idx].set_ylabel("Frequency")
@@ -60,7 +60,7 @@ def plot_examples(dataset, title, num_samples=4):
     else:
         # ✅ Plot PD OFF samples (second row)
         for idx, sample_idx in enumerate(pdoff_indices):
-            im = plot_rgb(axes[1, idx], images[sample_idx], f"PD OFF Sample {sample_idx}")
+            im = plot_rgb(axes[1, idx], images[sample_idx], f"PD OFF {sample_idx}")
             # Remove redundant labels
             if idx == 0:
                 axes[1,idx].set_ylabel("Frequency")
@@ -70,7 +70,7 @@ def plot_examples(dataset, title, num_samples=4):
 
         # ✅ Plot PD ON samples (third row)
         for idx, sample_idx in enumerate(pdon_indices):
-            im = plot_rgb(axes[2, idx], images[sample_idx], f"PD ON Sample {sample_idx}")
+            im = plot_rgb(axes[2, idx], images[sample_idx], f"PD ON {sample_idx}")
             # Remove redundant labels
             if idx == 0:
                 axes[2,idx].set_ylabel("Frequency")
@@ -95,5 +95,5 @@ def plot_examples(dataset, title, num_samples=4):
     plt.show()
 
 # ✅ Plot examples for both datasets
-plot_examples(dataset_train, "TFR via WST - Dataset 1 (Train)")
-plot_examples(dataset_val, "TFR via WST - Dataset 2 (Validation)")
+plot_examples(dataset_train, "TFR via WST - Dataset 1 (Train)",5)
+plot_examples(dataset_val, "TFR via WST - Dataset 2 (Validation)",3)
