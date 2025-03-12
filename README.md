@@ -32,7 +32,7 @@ The project utilizes EEG data from the following sources:
 To set up the project, ensure you have the following dependencies installed:
 
 ```bash
-pip install torch torchvision numpy scipy matplotlib seaborn
+pip install h5py kymatio matplotlib mne numpy os scikit-learn scipyseaborn torch torchvision torchmetrics
 ```
 
 ## 🚀 How to Run
