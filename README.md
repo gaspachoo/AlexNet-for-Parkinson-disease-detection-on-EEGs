@@ -52,7 +52,7 @@ pip install h5py kymatio matplotlib mne numpy os scikit-learn scipyseaborn torch
    ```
 4. Plot data:  
    ```bash
-   # Use **`tfr_plotter.py`**
+   tfr_plotter.py
    ```
 
 ## 📈 Results & Performance Analysis
