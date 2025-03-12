@@ -2,10 +2,6 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 
-# ✅ Load dataset (list of tuples)
-dataset_train = torch.load("./Datasets_pt/train_iowa.pt")
-dataset_val = torch.load("./Datasets_pt/val_iowa.pt")
-
 # ✅ Function to plot RGB images
 def plot_rgb(ax, img, title):
     img = img.permute(1, 2, 0).numpy()  # Convert from (3, H, W) to (H, W, 3)
@@ -72,6 +68,9 @@ def plot_examples(dataset, title, num_samples=11):
     plt.show()
 
 if __name__ == "__main__":
+    # ✅ Load dataset (list of tuples)
+    dataset_train = torch.load("./Datasets_pt/train_sd_off.pt")
+    dataset_val = torch.load("./Datasets_pt/val_sd_off.pt")
     # ✅ Plot examples for both datasets
-    plot_examples(dataset_train, "TFR via WST - Dataset 1 (Train)",5)
-    plot_examples(dataset_val, "TFR via WST - Dataset 2 (Validation)",3)
+    plot_examples(dataset_train, "TFR via WST - Train Set",5)
+    plot_examples(dataset_val, "TFR via WST - Validation Set",3)

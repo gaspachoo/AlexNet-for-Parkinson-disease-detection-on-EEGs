@@ -4,20 +4,6 @@ from sklearn.model_selection import train_test_split
 from support_func.dataset_class import *
 import support_func.wavelet_transform as wt
 
-
-def global_norm(images_tensor):
-    """Apply global normalization across all images in a tensor."""
-    if not isinstance(images_tensor, torch.Tensor):
-        raise TypeError(f"Expected a tensor, but got {type(images_tensor)}")
-
-    # Compute global min/max from the tensor itself
-    global_min = images_tensor.min()
-    global_max = images_tensor.max()
-
-    # Normalize all images based on global min/max
-    return (images_tensor - global_min) / (global_max - global_min + 1e-8)
-
-
 def process_and_save(indices, dataset,transform):
     images_list = []
     labels_list = []
@@ -42,9 +28,11 @@ def preload_dataset(mode,electrode_name,number_samples,save=False, medication=No
         assert(medication==None), "Medication setting should be None for Iowa Dataset"
         folder_path = "./Data/iowa/IowaData.mat"
         electrode_list_path="./Data/iowa/electrode_list.txt"
-    else:
+    elif mode =='san_diego':
         folder_path = "./Data/san_diego"
         electrode_list_path="./Data/san_diego/electrode_list.txt"
+    else:
+        raise ValueError ("Expected 'iowa' or 'san_diego'")
     
     # 1. Raw loading without transform
     raw_dataset = EEGDataset_1D(folder_path,electrode_name, electrode_list_path, number_samples, medication)
@@ -65,9 +53,6 @@ def preload_dataset(mode,electrode_name,number_samples,save=False, medication=No
 
     train_images,train_labels = process_and_save(train_idx,raw_dataset,transform_wst)
     val_images, val_labels = process_and_save(val_idx,raw_dataset,transform_wst)
-    
-    #train_images = global_norm(train_images) #Apply global norm
-    #val_images = global_norm(val_images)
     
     train_dataset = list(zip(train_images,train_labels))
     val_dataset = list(zip(val_images,val_labels))
@@ -100,8 +85,8 @@ def preload_dataset(mode,electrode_name,number_samples,save=False, medication=No
 
 if __name__ == "__main__":
     number_samples = 2000 #max for iowa : 60600, max for san_diego : 92160
-    electrode_name='AFz'
-    medication = None # For iowa, None, for san_diego, on or off or None (not None for model training)
-    mode = "iowa"
+    electrode_name='Fz'
+    medication = 'Off' # For iowa, None, for san_diego, on or off or None (not None for model training)
+    mode = "san_diego" #iowa or san_diego
     train_set,validate_set = preload_dataset(mode,electrode_name,number_samples,True, medication)
 

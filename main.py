@@ -40,10 +40,10 @@ def train_and_validate(
 
     print("Training")
     # Model, loss, optimizer, metrics
-    model = AlexNetCustom(num_classes=2).to(device)
-    '''model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
+    #model = AlexNetCustom(num_classes=2).to(device)
+    model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
     num_ftrs = model.fc.in_features
-    model.fc = nn.Linear(num_ftrs, 2)  # 2 classes (HC vs. PD)'''
+    model.fc = nn.Linear(num_ftrs, 2)  # 2 classes (HC vs. PD)
     model = model.to(device)
 
     criterion = nn.CrossEntropyLoss()
@@ -148,10 +148,10 @@ def train_and_validate(
 
 if __name__ == "__main__":
     
-    train_dataset = torch.load("./Datasets_pt/train_iowa.pt")
-    val_dataset = torch.load("./Datasets_pt/val_iowa.pt")
+    train_dataset = torch.load("./Datasets_pt/train_sd_off.pt")
+    val_dataset = torch.load("./Datasets_pt/val_sd_off.pt")
     
     print("Dataset loaded...")
     
     trained_model = train_and_validate(train_dataset, val_dataset, num_epochs=15)
-    #torch.save(trained_model.state_dict(), "./Models/model1.pth")
+    torch.save(trained_model.state_dict(), "./Models/model_resnet.pth")
