@@ -5,15 +5,16 @@ This project focuses on implementing and evaluating different neural network arc
 
 ## 📂 Project Structure
 The repository is organized as follows:
-
-- **`NN_classes.py`** – Defines the neural network architectures, including AlexNet-based models.    
-- **`import_data.py`** – Handles dataset loading and formatting.  
-- **`model_processing.py`** – Manage model training and evaluation pipelines.
-- **`wavelet_transform.py`** – Applies wavelet transformation for EEG feature extraction.  
+   
 - **`data_set_preloader.py`** – Automates dataset preprocessing and loading.  
 - **`main.py`** – Entry point to execute the training and evaluation process.  
 - **`tfr_plotter.py`** – Generates visualizations for EEG signal transformations.  
-- **`support_func/`** – Contains utility functions supporting various aspects of the pipeline.  
+- **`support_func/`** – Contains utility functions supporting various aspects of the pipeline:
+   - ***`dataset_class.py`*** – Contains the class `EEGDataset_1D`.
+   - ***`filters.py`*** – Contains the `butter_bandpass_filter`.  
+   - ***`import_data.py`*** – Handles dataset loading and formatting.
+   - ***`NN_classes.py`*** – Defines the neural network architectures, including AlexNet-based models.
+   - ***`wavelet_transform.py`*** – Applies wavelet transformation for EEG feature extraction.  
 - **`Data/`** – Stores the datasets source folders used for preparing the training and testing.
 - **`Datasets_pt/`** – Stores the datasets in .pt format, ready to be used for training and testing.  
 
