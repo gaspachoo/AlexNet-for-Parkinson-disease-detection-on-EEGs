@@ -35,7 +35,17 @@ def process_and_save(indices, dataset,transform):
     
     return all_images,all_labels
 
-def preload_dataset(folder_path,electrode_name,electrode_list_path,number_samples,save=False, medication=None):
+def preload_dataset(mode,electrode_name,number_samples,save=False, medication=None):
+    
+    # 0. Get folder path, electrode_list_path
+    if mode=="iowa":
+        assert(medication==None), "Medication setting should be None for Iowa Dataset"
+        folder_path = "./Data/iowa/IowaData.mat"
+        electrode_list_path="./Data/iowa/electrode_list.txt"
+    else:
+        folder_path = "./Data/san_diego"
+        electrode_list_path="./Data/san_diego/electrode_list.txt"
+    
     # 1. Raw loading without transform
     raw_dataset = EEGDataset_1D(folder_path,electrode_name, electrode_list_path, number_samples, medication)
 
@@ -50,13 +60,15 @@ def preload_dataset(folder_path,electrode_name,electrode_list_path,number_sample
     print("Applying WST")
     
     # 3. Wavelest Scattering Transform
-    #global_m = compute_global_absmax(raw_dataset) -> global normalization could be added ad an argument in WST
+    
     transform_wst = wt.WaveletScatteringTransform(number_samples, J=8, Q=24)
 
     train_images,train_labels = process_and_save(train_idx,raw_dataset,transform_wst)
-    #train_images = global_norm(train_images)
     val_images, val_labels = process_and_save(val_idx,raw_dataset,transform_wst)
+    
+    #train_images = global_norm(train_images) #Apply global norm
     #val_images = global_norm(val_images)
+    
     train_dataset = list(zip(train_images,train_labels))
     val_dataset = list(zip(val_images,val_labels))
     
@@ -88,9 +100,8 @@ def preload_dataset(folder_path,electrode_name,electrode_list_path,number_sample
 
 if __name__ == "__main__":
     number_samples = 2000 #max for iowa : 60600, max for san_diego : 92160
-    folder_path = "./Data/iowa/IowaData.mat" #./Data/iowa/IowaData.mat or ./Data/san_diego
     electrode_name='AFz'
-    electrode_list_path="./Data/iowa/electrode_list.txt" ## Do not forget to change too
-    medication = 'None' # For iowa, None, for san_diego, on or off or None (not None for model training)
-    train_set,validate_set = preload_dataset(folder_path,electrode_name,electrode_list_path,number_samples,True, medication)
+    medication = None # For iowa, None, for san_diego, on or off or None (not None for model training)
+    mode = "iowa"
+    train_set,validate_set = preload_dataset(mode,electrode_name,number_samples,True, medication)
 

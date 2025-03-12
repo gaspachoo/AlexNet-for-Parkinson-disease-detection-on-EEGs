@@ -26,7 +26,7 @@ def plot_examples(dataset, title, num_samples=11):
         pdon_indices = [i for i, label in enumerate(labels) if label == 2][:num_samples]
 
     # ✅ Create subplots
-    fig, axes = plt.subplots(num_rows, num_samples, figsize=(5 * num_samples, 5 * num_rows), sharex=True, sharey=True)
+    fig, axes = plt.subplots(num_rows, num_samples, figsize=(4 * num_samples, 3 * num_rows), sharex=True, sharey=True)
     axes = np.array(axes)  # Ensure axes is a 2D NumPy array for indexing
 
     # ✅ Function to plot RGB images
@@ -40,50 +40,27 @@ def plot_examples(dataset, title, num_samples=11):
     # ✅ Plot HC samples (first row)
     for idx, sample_idx in enumerate(hc_indices):
         im = plot_rgb(axes[0, idx], images[sample_idx], f"HC {sample_idx}")
-        # Remove redundant labels
-        if idx == 0:
-            axes[0,idx].set_ylabel("Frequency")
-        else:
-            axes[0,idx].set_yticklabels([])
-
+      
     if num_rows == 2:
         # ✅ Plot PD samples (second row)
         for idx, sample_idx in enumerate(pd_indices):
             med = 'On' if sorted(set(labels.numpy()))[1] == 2 else 'Off'
             im = plot_rgb(axes[1, idx], images[sample_idx], f"PD {med} {sample_idx}")
-            # Remove redundant labels
-            if idx == 0:
-                axes[1,idx].set_ylabel("Frequency")
-            else:
-                axes[1,idx].set_yticklabels([])
+
 
     else:
         # ✅ Plot PD OFF samples (second row)
         for idx, sample_idx in enumerate(pdoff_indices):
             im = plot_rgb(axes[1, idx], images[sample_idx], f"PD OFF {sample_idx}")
-            # Remove redundant labels
-            if idx == 0:
-                axes[1,idx].set_ylabel("Frequency")
-            else:
-                axes[1,idx].set_yticklabels([])
 
 
         # ✅ Plot PD ON samples (third row)
         for idx, sample_idx in enumerate(pdon_indices):
             im = plot_rgb(axes[2, idx], images[sample_idx], f"PD ON {sample_idx}")
-            # Remove redundant labels
-            if idx == 0:
-                axes[2,idx].set_ylabel("Frequency")
-            else:
-                axes[2,idx].set_yticklabels([])
+            
+    fig.text(0.001, 0.5, 'Frequency', va='center', rotation='vertical', fontsize=12)
+    fig.text(0.5, 0.001, 'Time', ha='center', fontsize=12)
 
-
-    # Hide x-axis labels for all but the last row
-    for row in range(num_rows):
-        for ax in axes[row]:
-            ax.set_xticklabels([])
-        for ax in axes[-1]:
-            ax.set_xlabel("Time")
         
     # Add a single colorbar to the right
     cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])  # Adjust position for clarity
