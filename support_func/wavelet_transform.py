@@ -9,7 +9,8 @@ class WaveletScatteringTransform:
         self.T = T
         self.J = J
         self.Q = Q
-        self.scattering = Scattering1D(J=self.J, shape=(self.T,), Q=self.Q, frontend=frontend)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.scattering = Scattering1D(J=self.J, shape=(self.T,), Q=self.Q, frontend=frontend).to(self.device)
 
     def __call__(self, sample):
         label = sample['label']
@@ -22,7 +23,7 @@ class WaveletScatteringTransform:
         #eeg_data *= scaling_factor
 
         # Turn into Torch tensor: [1, T]
-        x = torch.from_numpy(eeg_data).unsqueeze(0)
+        x = torch.from_numpy(eeg_data).unsqueeze(0).to(self.device)
         
         x = x.squeeze(-1)
         
@@ -57,10 +58,10 @@ class WaveletScatteringTransform:
 
         
         colormap = plt.cm.viridis  # Get the colormap
-        tensor_rgb = colormap(grayscale_tensor.numpy())[...,:3]  # Get RGB channels
+        tensor_rgb = colormap(grayscale_tensor.cpu().numpy())[..., :3]  # Convert to NumPy and extract RGB channels
         
         # Convert RGB NumPy array to PyTorch tensor
-        tensor_rgb_torch = torch.tensor(tensor_rgb, dtype=torch.float32)  # Shape: (227, 227, 3)
+        tensor_rgb_torch = torch.tensor(tensor_rgb, dtype=torch.float32)    # Shape: (227, 227, 3)
 
         # If you need it in (3, 227, 227) format (channel-first for deep learning models)
         tensor_rgb_torch = tensor_rgb_torch.permute(2, 0, 1)  # Shape: (3, 227, 227)

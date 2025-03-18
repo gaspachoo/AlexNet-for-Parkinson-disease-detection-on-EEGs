@@ -1,6 +1,6 @@
 from torch.utils.data import Dataset
 import numpy as np
-from support_func.import_data import load_data_iowa_1D, load_data_sandiego_1D
+from support_func.import_data import *
 from support_func.filters import butter_bandpass_filter
 
 class EEGDataset_1D(Dataset):
@@ -11,11 +11,11 @@ class EEGDataset_1D(Dataset):
 
         if "iowa" in data_dir.lower():
             self.data_source = "iowa"
-            self.eeg_data, self.labels = load_data_iowa_1D(data_dir, electrode_list_path, electrode_name)
+            self.eeg_data, self.labels = load_data_iowa_1D_seg(data_dir, electrode_list_path, electrode_name)
         
         else:
             self.data_source = "san_diego"
-            self.eeg_data, self.labels = load_data_sandiego_1D(data_dir, electrode_list_path, electrode_name)
+            self.eeg_data, self.labels = load_data_sandiego_1D_seg(data_dir, electrode_list_path, electrode_name)
 
             if medication is not None:
                 selected_label = 2 if medication.lower() == "on" else 1  # 2 = ON, 1 = OFF
