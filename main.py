@@ -41,10 +41,13 @@ def train_and_validate(
     print("Training")
     # Model, loss, optimizer, metrics
     model = AlexNetCustom(num_classes=2).to(device)
-    """
-    model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
+    
+    
+    """model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
+    
     num_ftrs = model.fc.in_features
     model.fc = nn.Linear(num_ftrs, 2)  # 2 classes (HC vs. PD)
+    #model.load_state_dict(torch.load("./Models/model_resnet_sdoff-70p.pth"))
     """
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()
