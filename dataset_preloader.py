@@ -3,8 +3,8 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from support_func.dataset_class import *
 import support_func.wavelet_transform as wt
-from support_func.cleaning_algos import *
-from scipy.signal import savgol_filter
+from support_func.filters import *
+
 
 def process_and_save(indices, dataset,transform,fs):
     images_list = []
@@ -14,8 +14,8 @@ def process_and_save(indices, dataset,transform,fs):
     for i,idx in enumerate(indices):
         sample = dataset[idx]      # e.g. {"eeg": shape (60600,), "label": 0/1}
         image = sample["eeg"]
-        image_filtered = butter_bandpass_filter(image, lowcut=0.5, highcut=40.0, fs=fs, order=4)
-        image_filtered = matlab_like_cleaning(image_filtered.T).T
+        image_filtered = bandpass_filter(image.T, lowcut=0.5, highcut=40.0, fs=fs, order=4)
+        image_filtered = matlab_like_cleaning(image_filtered).T
         #image_filtered = savgol_filter(image.T, window_length=11, polyorder=3).T
         sample["eeg"] = image_filtered
         out = transform(sample)

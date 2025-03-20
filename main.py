@@ -12,6 +12,7 @@ import seaborn as sns
 def train_and_validate(
     train_dataset,
     val_dataset,
+    model,
     num_epochs=500,
     batch_size=20,
     learning_rate=1e-4,
@@ -37,21 +38,22 @@ def train_and_validate(
         val_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True
     )
 
-    print("Training")
     # Model, loss, optimizer, metrics
-    model = AlexNetCustom(num_classes=2).to(device)
-    
-    
-    """model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
-    
-    num_ftrs = model.fc.in_features
-    model.fc = nn.Linear(num_ftrs, 2)  # 2 classes (HC vs. PD)
-    """
-    #model.load_state_dict(torch.load("./Models/model_resnet_sdoff-70p.pth"))
+    if model.lower() == "AlexNet".lower():
+        model = AlexNetCustom(num_classes=2).to(device)
+    elif model.lower() == "ResNet".lower():    
+        model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
+        num_ftrs = model.fc.in_features
+        model.fc = nn.Linear(num_ftrs, 2)  # 2 classes (HC vs. PD)
+        #model.load_state_dict(torch.load("./Models/model_resnet_sdoff-70p.pth"))
+    else:
+        raise ValueError("Model name not implemented yet")
     
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()
-
+    
+    print("Model loaded successfully")
+    
     # ✅ Adam optimizer with L2 Regularization (Weight Decay)
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-4)  # L2 reg
 
@@ -61,6 +63,7 @@ def train_and_validate(
     best_val_loss = float('inf')
     patience_counter = 0
 
+    print("Training")
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
@@ -151,11 +154,12 @@ def train_and_validate(
     return model
 
 if __name__ == "__main__":
-    file_end = "sd_off_Fz"
+    file_end = "iowa_AFz"
+    model_name = "alexnet"
     train_dataset = torch.load(f"./Datasets_pt/train_{file_end}.pt")
     val_dataset = torch.load(f"./Datasets_pt/val_{file_end}.pt")
     
     print("Dataset loaded...")
     
-    trained_model = train_and_validate(train_dataset, val_dataset, num_epochs=20, patience=10)
-    torch.save(trained_model.state_dict(), f"./Models/model_resnet_{file_end}.pth")
+    trained_model = train_and_validate(train_dataset, val_dataset,model_name, num_epochs=30, patience=10)
+    torch.save(trained_model.state_dict(), f"./Models/model_{model_name}_{file_end}.pth")

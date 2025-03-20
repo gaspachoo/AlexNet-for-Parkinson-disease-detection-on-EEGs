@@ -1,17 +1,17 @@
-# 🧠 EEG Classification with PyTorch
+# 🧠 PD Detection framework : Applying WST and AlexNet on EEGs 
 
 ## 📌 Project Overview
-This project focuses on implementing and evaluating different neural network architectures for EEG classification using **PyTorch**. It leverages multiple publicly available EEG datasets and explores various preprocessing techniques to enhance signal quality before classification.
+This project focuses on implementing and evaluating different neural network architectures for EEG classification using **PyTorch**. It EEG datasets in order to be able to recognize if a patient is suffering from PD thanks to a simple EEG of a few minutes.
 
 ## 📂 Project Structure
 The repository is organized as follows:
    
-- **`data_set_preloader.py`** – Automates dataset preprocessing and loading.  
+- **`dataset_preloader.py`** – Automates dataset preprocessing and loading.  
 - **`main.py`** – Entry point to execute the training and evaluation process.  
 - **`tfr_plotter.py`** – Generates visualizations for EEG signal transformations.  
 - **`support_func/`** – Contains utility functions supporting various aspects of the pipeline:
    - ***`dataset_class.py`*** – Contains the class `EEGDataset_1D`.
-   - ***`filters.py`*** – Contains the `butter_bandpass_filter`.  
+   - ***`filters.py`*** – Contains the `bandpass_filter`.  
    - ***`import_data.py`*** – Handles dataset loading and formatting.
    - ***`NN_classes.py`*** – Defines the neural network architectures, including AlexNet-based models.
    - ***`wavelet_transform.py`*** – Applies wavelet transformation for EEG feature extraction.  

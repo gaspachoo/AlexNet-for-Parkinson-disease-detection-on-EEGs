@@ -1,7 +1,6 @@
 from torch.utils.data import Dataset
 import numpy as np
 from support_func.import_data import *
-from support_func.filters import butter_bandpass_filter
 
 class EEGDataset_1D(Dataset):
     def __init__(self, data_dir, electrode_name, electrode_list_path, segment_duration, medication=None):

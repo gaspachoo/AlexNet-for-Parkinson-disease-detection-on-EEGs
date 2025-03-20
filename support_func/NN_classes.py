@@ -109,7 +109,6 @@ class AlexNetCustom(nn.Module):
         
         # FC3 -> ReLU (as described in the table, though unusual for final layer)
         x = self.fc3(x)          # shape: [B, 2]
-        #x = F.relu(x)            # Table 2 includes a ReLU for the last FC layer
         
         return self.sm(x)
     
