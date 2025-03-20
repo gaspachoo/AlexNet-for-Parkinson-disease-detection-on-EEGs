@@ -109,60 +109,7 @@ class AlexNetCustom(nn.Module):
         
         # FC3 -> ReLU (as described in the table, though unusual for final layer)
         x = self.fc3(x)          # shape: [B, 2]
-        x = F.relu(x)            # Table 2 includes a ReLU for the last FC layer
+        #x = F.relu(x)            # Table 2 includes a ReLU for the last FC layer
         
         return self.sm(x)
     
-    
-    import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
-class AlexNetCustom2(nn.Module):
-    def __init__(self, num_classes=2):
-        super().__init__()
-
-        # ✅ Convolutional Layers with BatchNorm
-        self.conv1 = nn.Conv2d(in_channels=3, out_channels=96, kernel_size=11, stride=4, padding=0)
-        self.bn1 = nn.BatchNorm2d(96)  # Batch Normalization
-        
-        self.conv2 = nn.Conv2d(in_channels=96, out_channels=256, kernel_size=5, stride=1, padding=2)
-        self.bn2 = nn.BatchNorm2d(256)
-
-        self.conv3 = nn.Conv2d(in_channels=256, out_channels=384, kernel_size=3, stride=1, padding=1)
-        self.bn3 = nn.BatchNorm2d(384)
-
-        self.conv4 = nn.Conv2d(in_channels=384, out_channels=384, kernel_size=3, stride=1, padding=1)
-        self.bn4 = nn.BatchNorm2d(384)
-
-        self.conv5 = nn.Conv2d(in_channels=384, out_channels=256, kernel_size=3, stride=1, padding=1)
-        self.bn5 = nn.BatchNorm2d(256)
-
-        # ✅ Pooling
-        self.pool = nn.MaxPool2d(kernel_size=3, stride=2)
-
-        # ✅ Fully Connected Layers (Reduced Parameters)
-        self.dropout1 = nn.Dropout(p=0.6)  # Increased dropout
-        self.fc1 = nn.Linear(256 * 6 * 6, 2048)  # Reduced from 4096 → 2048
-        self.bn_fc1 = nn.BatchNorm1d(2048)
-
-        self.dropout2 = nn.Dropout(p=0.6)
-        self.fc2 = nn.Linear(2048, 1024)  # Reduced from 4096 → 1024
-        self.bn_fc2 = nn.BatchNorm1d(1024)
-
-        self.fc3 = nn.Linear(1024, num_classes)  # Final Layer (2 outputs)
-
-    def forward(self, x):
-        x = self.pool(F.relu(self.bn1(self.conv1(x))))  # Conv1 → BN → ReLU → Pool
-        x = self.pool(F.relu(self.bn2(self.conv2(x))))
-        x = F.relu(self.bn3(self.conv3(x)))
-        x = F.relu(self.bn4(self.conv4(x)))
-        x = self.pool(F.relu(self.bn5(self.conv5(x))))
-
-        x = torch.flatten(x, 1)  # Flatten to vector
-
-        x = self.dropout1(F.relu(self.bn_fc1(self.fc1(x))))  # FC1 → BN → ReLU → Dropout
-        x = self.dropout2(F.relu(self.bn_fc2(self.fc2(x))))  # FC2 → BN → ReLU → Dropout
-        x = self.fc3(x)  # Final Classification Layer (no ReLU)
-
-        return x  # Softmax should be applied during loss computation

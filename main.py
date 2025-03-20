@@ -1,5 +1,4 @@
 from support_func.NN_classes import *
-from dataset_preloader import *
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -40,14 +39,14 @@ def train_and_validate(
 
     print("Training")
     # Model, loss, optimizer, metrics
-    #model = AlexNetCustom(num_classes=2).to(device)
+    model = AlexNetCustom(num_classes=2).to(device)
     
     
-    model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
+    """model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
     
     num_ftrs = model.fc.in_features
     model.fc = nn.Linear(num_ftrs, 2)  # 2 classes (HC vs. PD)
-    
+    """
     #model.load_state_dict(torch.load("./Models/model_resnet_sdoff-70p.pth"))
     
     model = model.to(device)
@@ -158,5 +157,5 @@ if __name__ == "__main__":
     
     print("Dataset loaded...")
     
-    trained_model = train_and_validate(train_dataset, val_dataset, num_epochs=30, patience=10)
+    trained_model = train_and_validate(train_dataset, val_dataset, num_epochs=20, patience=10)
     torch.save(trained_model.state_dict(), f"./Models/model_resnet_{file_end}.pth")
