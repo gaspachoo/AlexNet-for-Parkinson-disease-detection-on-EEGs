@@ -34,12 +34,12 @@ class EEGDataset_1D(Dataset):
 
         if "iowa" in data_dir.lower():
             self.data_source = "iowa"
-            self.eeg_data, self.labels = load_data_iowa_1D_seg(
+            self.eeg_data, self.labels = load_data_iowa(
                 data_dir, electrode_list_path, electrode_name, segment_duration
             )
         else:
             self.data_source = "san_diego"
-            self.eeg_data, self.labels = load_data_sandiego_1D_seg(
+            self.eeg_data, self.labels = load_data_sandiego(
                 data_dir, electrode_list_path, electrode_name, segment_duration
             )
 
