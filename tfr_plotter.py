@@ -20,7 +20,7 @@ def plot_examples(dataset, title, num_samples=11):
     num_rows = len(unique_labels)
 
     # ✅ Select indices for each class
-    hc_indices = [i for i, label in enumerate(labels) if label == 0][:num_samples]
+    hc_indices = np.array([i for i, label in enumerate(labels) if label == 0][:num_samples])
     
     if num_rows == 2:
         pd_indices = [i for i, label in enumerate(labels) if (label == 1 or label == 2)][:num_samples]     
@@ -69,8 +69,7 @@ def plot_examples(dataset, title, num_samples=11):
 
 if __name__ == "__main__":
     # ✅ Load dataset (list of tuples)
-    dataset_train = torch.load("./Datasets_pt/train_iowa.pt")
-    dataset_val = torch.load("./Datasets_pt/val_iowa.pt")
+    dataset_train = torch.load("./Datasets_pt/train_iowa_AFz.pt")
+
     # ✅ Plot examples for both datasets
     plot_examples(dataset_train, "TFR via WST - Train Set",5)
-    plot_examples(dataset_val, "TFR via WST - Validation Set",3)

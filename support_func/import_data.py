@@ -62,73 +62,23 @@ def load_data_iowa_1D(data_dir, electrode_list_path, electrode_name):
     labels[:14] = 1
     return electrode_data, labels
  
-def load_bdf_1D(file_path, electrode_index):
+def load_bdf_1D(file_path, electrode_index,segment=False,segment_duration = 0,T=None):
     """
     Loads a .bdf file and extracts the EEG signal for the specified electrode index.
     Segments the signal into 2-second windows.
     """
     raw = mne.io.read_raw_bdf(file_path, preload=True)
     eeg_signal = raw.get_data()[electrode_index, :]  # Extract 1D signal for the electrode
-    eeg_signal = segment_signal(eeg_signal,512)
+    
+    if T is not None:
+        if len(eeg_signal) > T:
+            eeg_signal = eeg_signal[:T]
+        elif len(eeg_signal) < T:
+            eeg_signal = np.pad(eeg_signal, (0, T - len(eeg_signal)), mode='constant')
+             
+    if segment:
+        eeg_signal = segment_signal(eeg_signal,512,segment_duration)
     return eeg_signal
-
-def load_data_sandiego_1D(data_dir, electrode_list_path, electrode_name):
-    """
-    Loads 1D EEG signals from BDF files in `data_dir`, considering the San Diego folder structure:
-    - sub-hcXX/ses-hc/eeg/*.bdf → Healthy control (HC, label=0)
-    - sub-pdXX/ses-off/eeg/*.bdf → Parkinson OFF (label=1)
-    - sub-pdXX/ses-on/eeg/*.bdf → Parkinson ON (label=2)
-    """
-    
-    # Load the list of electrodes
-    with open(electrode_list_path, "r", encoding="utf-8") as f:
-        electrode_list = f.read().strip().split()
-    
-    print("📄 Electrode list loaded")
-    
-    if electrode_name not in electrode_list:
-        raise ValueError(f"⚠️ The {electrode_name} electrode is not in the electrode list.")
-    
-    electrode_index = electrode_list.index(electrode_name)  # Find the index of the electrode
-    print(f"✅ {electrode_name} found at index: {electrode_index}")
-    
-    data = []
-    labels = []
-    mne.set_log_level("ERROR")  # Suppress info messages, show only errors
-
-    
-    for sub_folder in os.listdir(data_dir):
-        sub_path = os.path.join(data_dir, sub_folder)
-        if not os.path.isdir(sub_path):
-            continue
-        
-        if sub_folder.startswith("sub-hc"):  # Healthy control group
-            label = 0
-            session_path = os.path.join(sub_path, "ses-hc", "eeg")
-            if os.path.exists(session_path):
-                for file in os.listdir(session_path):
-                    if file.endswith(".bdf"):
-                        file_path = os.path.join(session_path, file)
-                        signal = load_bdf_1D(file_path, electrode_index)
-                        data.append(signal)
-                        labels.append(label)
-        
-        elif sub_folder.startswith("sub-pd"):  # Parkinson's disease group
-            for session, label in [("ses-off", 1), ("ses-on", 2)]:
-                session_path = os.path.join(sub_path, session, "eeg")
-                if os.path.exists(session_path):
-                    for file in os.listdir(session_path):
-                        if file.endswith(".bdf"):
-                            file_path = os.path.join(session_path, file)
-                            signal = load_bdf_1D(file_path, electrode_index)
-                            data.append(signal)
-                            labels.append(label)
-    
-    data = np.array(data, dtype=object)
-    labels = np.array(labels)
-    print(f"✅ {len(data)} signals loaded.")
-    return data, labels
-
 
 def segment_signal(signal, fs, segment_duration=2):
     """
@@ -149,7 +99,7 @@ def segment_signal(signal, fs, segment_duration=2):
     return segmented_signal
 
 
-def load_data_iowa_1D_seg(data_dir, electrode_list_path, electrode_name):
+def load_data_iowa_1D_seg(data_dir, electrode_list_path, electrode_name,segment_duration):
     """
     Load EEG signals from the Iowa dataset and extract the specified electrode.
     Signals are segmented into 2-second windows (500 Hz sampling rate) and flattened.
@@ -189,7 +139,7 @@ def load_data_iowa_1D_seg(data_dir, electrode_list_path, electrode_name):
                 patient_ref = group_data[patient_idx][0] if group_data[patient_idx].shape == (1,) else group_data[patient_idx]
                 if isinstance(patient_ref, h5py.Reference):
                     signal = f[patient_ref][:].squeeze()
-                    segments = segment_signal(signal, fs)
+                    segments = segment_signal(signal, fs,segment_duration)
                     segmented_data.extend(segments)  # Flatten list of segments
                     labels.extend([group_idx] * len(segments))  # Extend labels accordingly
                 else:
@@ -198,7 +148,7 @@ def load_data_iowa_1D_seg(data_dir, electrode_list_path, electrode_name):
     print(f"✅ {len(segmented_data)} total segments loaded.")
     return segmented_data, labels
 
-def load_data_sandiego_1D_seg(data_dir, electrode_list_path, electrode_name):
+def load_data_sandiego_1D_seg(data_dir, electrode_list_path, electrode_name,segment_duration=2):
     """
     Loads EEG signals from the San Diego dataset, extracts specified electrode,
     and segments signals into 2-second windows (512 Hz sampling rate), flattening the output.
@@ -214,8 +164,8 @@ def load_data_sandiego_1D_seg(data_dir, electrode_list_path, electrode_name):
     
     data = []
     labels = []
-    fs = 512  # Sampling frequency for San Diego dataset
     mne.set_log_level("ERROR")
+    T_max = 92160
     
     for sub_folder in os.listdir(data_dir):
         sub_path = os.path.join(data_dir, sub_folder)
@@ -229,7 +179,7 @@ def load_data_sandiego_1D_seg(data_dir, electrode_list_path, electrode_name):
                 for file in os.listdir(session_path):
                     if file.endswith(".bdf"):
                         file_path = os.path.join(session_path, file)
-                        segments = load_bdf_1D(file_path, electrode_index)
+                        segments = load_bdf_1D(file_path, electrode_index,True,segment_duration,T_max)
                         data.extend(segments)
                         labels.extend([label] * len(segments))
         
@@ -240,9 +190,26 @@ def load_data_sandiego_1D_seg(data_dir, electrode_list_path, electrode_name):
                     for file in os.listdir(session_path):
                         if file.endswith(".bdf"):
                             file_path = os.path.join(session_path, file)
-                            segments = load_bdf_1D(file_path, electrode_index)
+                            segments = load_bdf_1D(file_path, electrode_index,True,segment_duration,T_max)
                             data.extend(segments)
                             labels.extend([label] * len(segments))
     
     print(f"✅ {len(data)} total segments loaded.")
     return data, labels
+
+"""
+data_dir = "./Data/san_diego"
+electrode_list_path = "./Data/san_diego/electrode_list.txt"
+electrode_name = "Fz"
+data,labels = load_data_sandiego_1D_seg(data_dir,electrode_list_path,electrode_name)
+import matplotlib.pyplot as plt
+from cleaning_algos import *
+eeg = np.array(data[212])
+eeg = eeg[np.newaxis, :]
+print(eeg.shape)
+eeg_f = SKLFast_ICA(eeg)
+print(eeg.shape)
+#plt.plot(eeg.T)
+plt.plot(eeg_f.T)
+plt.show()
+"""

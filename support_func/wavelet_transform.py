@@ -5,23 +5,19 @@ from kymatio import Scattering1D
 import matplotlib.pyplot as plt
 
 class WaveletScatteringTransform:
-    def __init__(self, T, J=8, Q=16, frontend='torch'):
-        self.T = T
+    def __init__(self, segment_duration,fs, J=8, Q=16, frontend='torch'):
+        self.T = segment_duration*fs
+        self.fs = fs
         self.J = J
         self.Q = Q
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.scattering = Scattering1D(J=self.J, shape=(self.T,), Q=self.Q, frontend=frontend).to(self.device)
+        self.scattering = Scattering1D(J=self.J, shape=(self.T,), Q=self.Q, frontend=frontend, max_order=1).to(self.device)
 
     def __call__(self, sample):
         label = sample['label']
         # sample['eeg'] assumed shape (T,).
         eeg_data = sample['eeg'].astype(np.float32)
         
-
-        #eeg_data = eeg_data / np.max(np.abs(eeg_data))
-        scaling_factor = 1e5  # Adjust based on min/max values
-        #eeg_data *= scaling_factor
-
         # Turn into Torch tensor: [1, T]
         x = torch.from_numpy(eeg_data).unsqueeze(0).to(self.device)
         

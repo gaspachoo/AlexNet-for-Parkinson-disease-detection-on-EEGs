@@ -4,18 +4,44 @@ from support_func.import_data import *
 from support_func.filters import butter_bandpass_filter
 
 class EEGDataset_1D(Dataset):
-    def __init__(self, data_dir, electrode_name, electrode_list_path, T, medication=None):
+    def __init__(self, data_dir, electrode_name, electrode_list_path, segment_duration, medication=None):
+        """
+        Initialize EEGDataset_1D
+
+        Parameters
+        ----------
+        data_dir : str
+            Path to the dataset
+        electrode_name : str
+            Name of the electrode
+        electrode_list_path : str
+            Path to the file containing the list of electrodes
+        T : int
+            Length of each segment
+        medication : str, optional
+            Medication status for San Diego dataset. If provided, the dataset will be filtered to include only the specified medication status.
+
+        Returns
+        -------
+        None
+        """
         super().__init__()
-        self.T = T
+        self.segment_duration = segment_duration
         self.medication = medication
+        
+        self.fs = 500.0 if "iowa" in data_dir.lower() else 512.0
+        self.sample_length = int(self.fs * self.segment_duration)  # automatique ✅
 
         if "iowa" in data_dir.lower():
             self.data_source = "iowa"
-            self.eeg_data, self.labels = load_data_iowa_1D_seg(data_dir, electrode_list_path, electrode_name)
-        
+            self.eeg_data, self.labels = load_data_iowa_1D_seg(
+                data_dir, electrode_list_path, electrode_name, segment_duration
+            )
         else:
             self.data_source = "san_diego"
-            self.eeg_data, self.labels = load_data_sandiego_1D_seg(data_dir, electrode_list_path, electrode_name)
+            self.eeg_data, self.labels = load_data_sandiego_1D_seg(
+                data_dir, electrode_list_path, electrode_name, segment_duration
+            )
 
             if medication is not None:
                 selected_label = 2 if medication.lower() == "on" else 1  # 2 = ON, 1 = OFF
@@ -40,16 +66,13 @@ class EEGDataset_1D(Dataset):
         return len(self.eeg_data)
     
     def __getitem__(self, idx):
-        eeg_1d = self.eeg_data[idx]  
-        fs = 500.0 if self.data_source == "iowa" else 512.0
-        eeg_1d = butter_bandpass_filter(eeg_1d, lowcut=0.5, highcut=40.0, fs=fs, order=4)
+        eeg_1d = self.eeg_data[idx]
+        
+        if len(eeg_1d) > self.sample_length:
+            eeg_1d = eeg_1d[:self.sample_length]
+        elif len(eeg_1d) < self.sample_length:
+            eeg_1d = np.pad(eeg_1d, (0, self.sample_length - len(eeg_1d)), mode='constant')
 
-        if len(eeg_1d) > self.T:
-            eeg_1d = eeg_1d[:self.T]  
-        elif len(eeg_1d) < self.T:
-            eeg_1d = np.pad(eeg_1d, (0, self.T - len(eeg_1d)), mode='constant')  
-
-        eeg_1d = eeg_1d.astype(np.float32).reshape(-1, 1)  
-        sample = {'eeg': eeg_1d, 'label': int(self.labels[idx])}  
-
+        eeg_1d = eeg_1d.astype(np.float32).reshape(-1, 1)
+        sample = {'eeg': eeg_1d, 'label': int(self.labels[idx])}
         return sample
