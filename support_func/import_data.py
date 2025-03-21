@@ -40,11 +40,16 @@ def segment_signal(signal, fs, segment_duration=2):
     segmented_signal = signal[:num_segments * segment_length].reshape(num_segments, segment_length)
     return segmented_signal
 
-def load_data_iowa(data_dir, electrode_list_path, electrode_name,segment_duration):
+def load_data_iowa(data_dir, electrode_list_path, electrode_name, segment_duration):
     """
     Load EEG signals from the Iowa dataset and extract the specified electrode.
     Signals are segmented into 2-second windows (500 Hz sampling rate) and flattened.
     """
+    if not os.path.exists(data_dir):
+        raise FileNotFoundError(f"❌ The file {data_dir} does not exist.")
+    else:
+        print("File found, loading data...",flush=True)
+    
     with open(electrode_list_path, "r", encoding="utf-8") as f:
         electrode_list = f.read().strip().split()
     
@@ -80,7 +85,7 @@ def load_data_iowa(data_dir, electrode_list_path, electrode_name,segment_duratio
                 patient_ref = group_data[patient_idx][0] if group_data[patient_idx].shape == (1,) else group_data[patient_idx]
                 if isinstance(patient_ref, h5py.Reference):
                     signal = f[patient_ref][:].squeeze()
-                    segments = segment_signal(signal, fs,segment_duration)
+                    segments = segment_signal(signal, fs, segment_duration)
                     segmented_data.extend(segments)  # Flatten list of segments
                     labels.extend([group_idx] * len(segments))  # Extend labels accordingly
                 else:

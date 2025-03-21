@@ -32,9 +32,9 @@ The project utilizes EEG data from the following sources:
 To set up the project, ensure you have the following dependencies installed:
 
 ```bash
-pip install h5py kymatio matplotlib mne numpy os scikit-learn scipyseaborn torch torchvision torchmetrics
+pip install h5py kymatio matplotlib mne numpy scikit-learn scipy seaborn torchmetrics
 ```
-
+Also install torch, torchvision, torchaudio compatible with your cuda version
 ## 🚀 How to Run
 
 1. Clone the repository:  

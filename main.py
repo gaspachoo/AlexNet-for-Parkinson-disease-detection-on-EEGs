@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 from torchmetrics.classification import MulticlassF1Score, MulticlassConfusionMatrix
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy as np
 
 
 def train_and_validate(
@@ -32,10 +33,10 @@ def train_and_validate(
     print("Creating DataLoaders...")
 
     train_loader = DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=2, pin_memory=True
     )
     val_loader = DataLoader(
-        val_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True
+        val_dataset, batch_size=batch_size, shuffle=False, num_workers=2, pin_memory=True
     )
 
     # Model, loss, optimizer, metrics
@@ -154,7 +155,7 @@ def train_and_validate(
     return model
 
 if __name__ == "__main__":
-    file_end = "iowa_AFz"
+    file_end = "sd_off_Fz"
     model_name = "alexnet"
     train_dataset = torch.load(f"./Datasets_pt/train_{file_end}.pt")
     val_dataset = torch.load(f"./Datasets_pt/val_{file_end}.pt")

@@ -80,8 +80,8 @@ def preload_dataset(mode, electrode_name, segment_duration, save=False, medicati
 
 if __name__ == "__main__":
     segment_duration = 5 #in seconds
-    electrode_name='AFz' ## AFz for iowa, Fz for sd
-    medication = None # For iowa, None, for san_diego, on or off or None (not None for model training)
-    mode = "iowa" #iowa or san_diego
+    electrode_name='Fz' ## AFz for iowa, Fz for sd
+    medication = "off" # For iowa, None, for san_diego, on or off or None (not None for model training)
+    mode = "san_diego" #iowa or san_diego
     train_set,validate_set = preload_dataset(mode,electrode_name,segment_duration,True, medication)
 
