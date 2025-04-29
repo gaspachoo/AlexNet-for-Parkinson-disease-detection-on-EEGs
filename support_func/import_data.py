@@ -48,7 +48,7 @@ def load_data_iowa(data_dir, electrode_list_path, electrode_name, segment_durati
     if not os.path.exists(data_dir):
         raise FileNotFoundError(f"❌ The file {data_dir} does not exist.")
     else:
-        print("File found, loading data...",flush=True)
+        print("Data File found, loading data...",flush=True)
     
     with open(electrode_list_path, "r", encoding="utf-8") as f:
         electrode_list = f.read().strip().split()
