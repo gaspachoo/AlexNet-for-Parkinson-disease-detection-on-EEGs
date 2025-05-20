@@ -24,7 +24,7 @@ The project utilizes EEG data from the following sources:
 1. [Iowa Neuroscience Institute](https://narayanan.lab.uiowa.edu/home/data)  
 2. [OpenNeuro Dataset (ds002778)](https://openneuro.org/datasets/ds002778/versions/1.0.5)  
 
-## 🔬 Models Implemented
+## 🔬 Checkpoints Implemented
 - **AlexNet-based architecture** for EEG classification, inspired by [this study](https://www.sciencedirect.com/science/article/pii/S0010482524005468).  
 - Additional baseline models (e.g., fully connected networks).  
 

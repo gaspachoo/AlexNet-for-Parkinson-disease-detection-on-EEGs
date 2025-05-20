@@ -19,7 +19,7 @@ def train_and_validate(
     batch_size=20,
     learning_rate=1e-4,
     patience=8,
-    checkpoint_path="./Models/checkpoint.pth"  # ✅ Path for saving/loading checkpoint
+    checkpoint_path="./Checkpoints/checkpoint.pth"  # ✅ Path for saving/loading checkpoint
 ):
     """
     Train and validate a model on precomputed EEG data with early stopping, checkpoint saving, and metrics.
@@ -245,7 +245,7 @@ if __name__ == "__main__":
         model_name,
         num_epochs=200,
         patience=15,
-        checkpoint_path=f"./Models/checkpoint_{model_name}_{file_end}.pth"  # ✅ Custom checkpoint path
+        checkpoint_path=f"./Checkpoints/checkpoint_{model_name}_{file_end}.pth"  # ✅ Custom checkpoint path
     )
 
-    torch.save(trained_model.state_dict(), f"./Models/model_{model_name}_{file_end}.pth")
+    torch.save(trained_model.state_dict(), f"./Checkpoints/model_{model_name}_{file_end}.pth")
