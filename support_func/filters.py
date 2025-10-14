@@ -4,14 +4,15 @@ import pywt
 from scipy.signal import butter, filtfilt, savgol_filter
 from sklearn.decomposition import FastICA
 
+
 def bandpass_filter(signal, lowcut=0.5, highcut=40, fs=128, order=4):
     """Band-pass filter for EEG signal."""
     nyquist = 0.5 * fs
-    b, a = butter(order, [lowcut / nyquist, highcut / nyquist], btype='band')
+    b, a = butter(order, [lowcut / nyquist, highcut / nyquist], btype="band")
     return filtfilt(b, a, signal)
 
 
-def wavelet_denoising(signal, wavelet='db4', level=4):
+def wavelet_denoising(signal, wavelet="db4", level=4):
     """Wavelet denoising with adaptive thresholding."""
     coeffs = pywt.wavedec(signal, wavelet, level=level)
     sigma = np.median(np.abs(coeffs[-1])) / 0.6745  # Noise estimation
@@ -19,32 +20,33 @@ def wavelet_denoising(signal, wavelet='db4', level=4):
 
     denoised_coeffs = [coeffs[0]]  # Keep approximation coefficients
     for detail_coeff in coeffs[1:]:
-        denoised_detail = pywt.threshold(detail_coeff, threshold, mode='soft')
+        denoised_detail = pywt.threshold(detail_coeff, threshold, mode="soft")
         denoised_coeffs.append(denoised_detail)
 
     return pywt.waverec(denoised_coeffs, wavelet)
 
+
 def modern_cleaning(eeg_data, sfreq=128):
     """
     Optimized EEG cleaning: band-pass filter, ICA, and wavelet denoising.
-    
+
     eeg_data: np.ndarray (channels, samples)
     sfreq: Sampling frequency (Hz)
-    
+
     Returns:
         cleaned_data: np.ndarray (channels, samples)
     """
 
     n_channels, n_times = eeg_data.shape
     ch_names = [f"EEG {i+1}" for i in range(n_channels)]
-    ch_types = ['eeg'] * n_channels
+    ch_types = ["eeg"] * n_channels
 
     info = mne.create_info(ch_names=ch_names, sfreq=sfreq, ch_types=ch_types)
     raw = mne.io.RawArray(eeg_data, info)
 
-    raw.filter(1., 40., fir_design='firwin')
+    raw.filter(1.0, 40.0, fir_design="firwin")
 
-    ica = mne.preprocessing.ICA(n_components=15, random_state=97, max_iter='auto')
+    ica = mne.preprocessing.ICA(n_components=15, random_state=97, max_iter="auto")
     ica.fit(raw)
 
     # Comment out automatic artifact detection (no EOG channels)
@@ -66,17 +68,19 @@ def modern_cleaning(eeg_data, sfreq=128):
     return cleaned_data
 
 
-def matlab_like_cleaning(eeg_data, polyorder=5, window_length=127, wavelet='db2', level=4):
+def matlab_like_cleaning(
+    eeg_data, polyorder=5, window_length=127, wavelet="db2", level=4
+):
     """
     Translation of MATLAB EEG cleaning using Savitzky-Golay filter and wavelet thresholding.
-    
+
     Parameters:
         eeg_data: np.ndarray, shape (channels, samples)
         polyorder: int, polynomial order for Savitzky-Golay filter
         window_length: int, window length for Savitzky-Golay filter
         wavelet: str, wavelet type for decomposition
         level: int, decomposition level
-    
+
     Returns:
         clean_data: np.ndarray, cleaned EEG signals
     """
@@ -107,7 +111,7 @@ def matlab_like_cleaning(eeg_data, polyorder=5, window_length=127, wavelet='db2'
         # Reconstruct the signal
         coeffs = [approx] + details
         clean = pywt.waverec(coeffs, wavelet)
-        
+
         # Truncate to original length in case of padding during wavelet processing
         clean_data[ch, :] = clean[:num_samples]
 
@@ -120,7 +124,7 @@ def SKLFast_ICA(eeg_data, lda=6):
     if n_channels == 32:
         pass
     else:
-        print('error')
+        print("error")
     # Apply ICA (Independent Component Analysis)
     ica = FastICA(n_components=n_channels, random_state=42)
     ica_sources = ica.fit_transform(filtered_eeg.T).T
@@ -128,7 +132,9 @@ def SKLFast_ICA(eeg_data, lda=6):
     # Identify Artifacts (Heuristic: High Amplitude Components)
     artifact_indices = []
     for i in range(n_channels):
-        if np.max(np.abs(ica_sources[i])) > lda * np.median(np.abs(ica_sources[i])):  # Threshold-based detection
+        if np.max(np.abs(ica_sources[i])) > lda * np.median(
+            np.abs(ica_sources[i])
+        ):  # Threshold-based detection
             artifact_indices.append(i)
 
     print(f"Identified Artifact Components: {artifact_indices}")
@@ -138,5 +144,5 @@ def SKLFast_ICA(eeg_data, lda=6):
 
     # Reconstruct EEG Data (Inverse ICA)
     cleaned_eeg = ica.inverse_transform(ica_sources.T).T
-    
+
     return cleaned_eeg
