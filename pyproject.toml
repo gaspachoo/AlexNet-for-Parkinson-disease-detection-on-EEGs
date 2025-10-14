@@ -1,0 +1,22 @@
+[project]
+name = "AlexNet-for-Parkinson-disease-detection-on-EEGs"
+version = "0.1.0"
+description = "A project that utilizes AlexNet for the detection of Parkinson's disease through EEG signals."
+readme = "README.md"
+requires-python = ">=3.10.13"
+dependencies = [
+    # PyTorch 2.6.0 + CUDA 12.6 (Windows, adapte le cpXXX à ta version Python)
+    "torch @ https://download.pytorch.org/whl/cu126/torch-2.6.0%2Bcu126-cp310-cp310-win_amd64.whl",
+    "torchvision @ https://download.pytorch.org/whl/cu126/torchvision-0.21.0%2Bcu126-cp310-cp310-win_amd64.whl",
+    "torchaudio @ https://download.pytorch.org/whl/cu126/torchaudio-2.6.0%2Bcu126-cp310-cp310-win_amd64.whl",
+    # Metrics compatible avec Torch 2.x
+    "torchmetrics>=1.3,<2.0",
+    "h5py>=3.15.0",
+    "kymatio>=0.3.0",
+    "matplotlib>=3.10.7",
+    "mne>=1.10.2",
+    "scikit-learn>=1.7.2",
+    "scipy>=1.15.3",
+    "seaborn>=0.13.2",
+    "wandb>=0.22.2",
+]
