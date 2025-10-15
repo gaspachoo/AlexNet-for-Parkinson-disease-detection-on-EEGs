@@ -1,6 +1,6 @@
 from torch.utils.data import Dataset
 import numpy as np
-from support_func.import_data import *
+from support_func.import_data import load_data_iowa, load_data_sandiego
 
 
 class EEGDataset_1D(Dataset):
@@ -37,7 +37,7 @@ class EEGDataset_1D(Dataset):
         self.medication = medication
 
         self.fs = 500.0 if "iowa" in data_dir.lower() else 512.0
-        self.sample_length = int(self.fs * self.segment_duration)  # automatique ✅
+        self.sample_length = int(self.fs * self.segment_duration)  # automatique
 
         if "iowa" in data_dir.lower():
             self.data_source = "iowa"
@@ -65,7 +65,7 @@ class EEGDataset_1D(Dataset):
 
                 if len(filtered_data) == 0:
                     raise ValueError(
-                        f"❌ No samples found for HC + PD {medication.upper()} in San Diego dataset!"
+                        f"No samples found for HC + PD {medication.upper()} in San Diego dataset!"
                     )
 
                 self.eeg_data = np.array(filtered_data, dtype=object)
@@ -77,7 +77,7 @@ class EEGDataset_1D(Dataset):
 
         assert len(self.eeg_data) == len(
             self.labels
-        ), "❌ Mismatch between EEG data and labels."
+        ), "Mismatch between EEG data and labels."
 
     def __len__(self):
         return len(self.eeg_data)

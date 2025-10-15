@@ -1,9 +1,9 @@
 import torch
 import numpy as np
 from sklearn.model_selection import train_test_split
-from support_func.dataset_class import *
+from support_func.dataset_class import EEGDataset_1D
 import support_func.wavelet_transform as wt
-from support_func.filters import *
+from support_func.filters import bandpass_filter, matlab_like_cleaning
 
 
 def process_and_save(indices, dataset, transform, fs):
@@ -63,7 +63,7 @@ def preload_dataset(
     fs = 512 if mode == "san_diego" else 500
     transform_wst = wt.WaveletScatteringTransform(
         segment_duration, fs, J=10, Q=24
-    )  #### Change WST hyperparameters
+    )  # Change WST hyperparameters
 
     print("Processing and saving")
     train_images, train_labels = process_and_save(
@@ -94,7 +94,7 @@ def preload_dataset(
 
 if __name__ == "__main__":
     segment_duration = 5  # in seconds
-    electrode_name = "Fz"  ## AFz for iowa, Fz for sd
+    electrode_name = "Fz"  # AFz for iowa, Fz for sd
     medication = "off"  # For iowa, None, for san_diego, on or off or None (not None for model training)
     mode = "san_diego"  # iowa or san_diego
     train_set, validate_set = preload_dataset(

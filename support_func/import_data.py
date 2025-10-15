@@ -1,7 +1,6 @@
 import numpy as np
 import h5py
 import os
-import numpy as np
 import mne
 
 
@@ -53,7 +52,7 @@ def load_data_iowa(data_dir, electrode_list_path, electrode_name, segment_durati
     Signals are segmented into 2-second windows (500 Hz sampling rate) and flattened.
     """
     if not os.path.exists(data_dir):
-        raise FileNotFoundError(f"❌ The file {data_dir} does not exist.")
+        raise FileNotFoundError(f"The file {data_dir} does not exist.")
     else:
         print("Data File found, loading data...", flush=True)
 
@@ -85,9 +84,7 @@ def load_data_iowa(data_dir, electrode_list_path, electrode_name, segment_durati
         if isinstance(ch_ref, h5py.Reference):
             ch_data = f[ch_ref]
         else:
-            raise TypeError(
-                f"❌ Error: ch_ref is not a HDF5 reference but {type(ch_ref)}"
-            )
+            raise TypeError(f"Error: ch_ref is not a HDF5 reference but {type(ch_ref)}")
 
         for group_idx in range(num_groups):
             group_ref = (
@@ -99,7 +96,7 @@ def load_data_iowa(data_dir, electrode_list_path, electrode_name, segment_durati
                 group_data = f[group_ref]
             else:
                 raise TypeError(
-                    f"❌ Error: group_ref is not a HDF5 reference but {type(group_ref)}"
+                    f"Error: group_ref is not a HDF5 reference but {type(group_ref)}"
                 )
 
             for patient_idx in range(num_patients):
@@ -117,7 +114,7 @@ def load_data_iowa(data_dir, electrode_list_path, electrode_name, segment_durati
                     )  # Extend labels accordingly
                 else:
                     raise TypeError(
-                        f"❌ Error: patient_ref is not a HDF5 reference but {type(patient_ref)}"
+                        f"Error: patient_ref is not a HDF5 reference but {type(patient_ref)}"
                     )
 
     print(f"{len(segmented_data)} total segments loaded.")

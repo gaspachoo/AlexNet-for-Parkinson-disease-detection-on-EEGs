@@ -1,4 +1,4 @@
-from support_func.NN_classes import *
+from support_func.NN_classes import AlexNetCustom
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -7,7 +7,6 @@ from torch.utils.data import DataLoader
 from torchmetrics.classification import MulticlassF1Score, MulticlassConfusionMatrix
 import matplotlib.pyplot as plt
 import seaborn as sns
-import numpy as np
 import wandb
 import os
 
