@@ -4,3 +4,4 @@ Checkpoints/
 connect_to_gpu.sh
 __pycache__/
 wandb/
+.venv/
