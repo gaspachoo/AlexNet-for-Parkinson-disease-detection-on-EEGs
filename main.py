@@ -4,7 +4,10 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision.models as models
 from torch.utils.data import DataLoader
-from torchmetrics.classification import MulticlassF1Score, MulticlassConfusionMatrix
+from torchmetrics.classification import (
+    MulticlassF1Score,
+    MulticlassConfusionMatrix,
+)
 import matplotlib.pyplot as plt
 import seaborn as sns
 import wandb
@@ -21,7 +24,7 @@ def train_and_validate(
     batch_size=20,
     learning_rate=1e-4,
     patience=8,
-    checkpoint_path="./Checkpoints/checkpoint.pth",  # Path for saving/loading checkpoint
+    checkpoint_path="./Checkpoints/checkpoint.pth",  # Path for checkpoint
 ):
     """
     Train and validate a model on precomputed EEG data with early stopping, checkpoint saving, and metrics.
@@ -64,7 +67,7 @@ def train_and_validate(
         shuffle=False,
         num_workers=2,
         pin_memory=True,
-        generator=dl_generator,  # not necessary for shuffle=False but included for determinism
+        generator=dl_generator,  # included for determinism
     )
 
     # Model, loss, optimizer, metrics
@@ -79,7 +82,9 @@ def train_and_validate(
 
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-4)
+    optimizer = optim.Adam(
+        model.parameters(), lr=learning_rate, weight_decay=1e-4
+    )
 
     f1_metric = MulticlassF1Score(num_classes=2, average="macro").to(device)
     confmat_metric = MulticlassConfusionMatrix(num_classes=2).to(device)
@@ -191,7 +196,9 @@ def train_and_validate(
                     "train_accuracy": train_accuracy,
                     "val_loss": avg_val_loss,
                     "val_accuracy": val_accuracy,
-                    "val_f1": val_f1.item() if hasattr(val_f1, "item") else val_f1,
+                    "val_f1": (
+                        val_f1.item() if hasattr(val_f1, "item") else val_f1
+                    ),
                 },
                 step=epoch,
             )
@@ -296,5 +303,6 @@ if __name__ == "__main__":
     )
 
     torch.save(
-        trained_model.state_dict(), f"./Checkpoints/model_{model_name}_{file_end}.pth"
+        trained_model.state_dict(),
+        f"./Checkpoints/model_{model_name}_{file_end}.pth",
     )
