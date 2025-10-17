@@ -61,7 +61,7 @@ def load_data_iowa(data_dir, electrode_list_path, electrode_name, segment_durati
 
     if electrode_name not in electrode_list:
         raise ValueError(
-            f"⚠️ The {electrode_name} electrode is not in the file electrode_list.txt."
+            f"The {electrode_name} electrode is not in the file electrode_list.txt."
         )
 
     electrode_index = electrode_list.index(electrode_name)
@@ -133,7 +133,7 @@ def load_data_sandiego(
 
     if electrode_name not in electrode_list:
         raise ValueError(
-            f"⚠️ The {electrode_name} electrode is not in the electrode list."
+            f"The {electrode_name} electrode is not in the electrode list."
         )
 
     electrode_index = electrode_list.index(electrode_name)
