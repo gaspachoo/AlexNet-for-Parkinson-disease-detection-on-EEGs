@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import wandb
 import os
+import random
+import numpy as np
 
 
 def train_and_validate(
@@ -31,6 +33,21 @@ def train_and_validate(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Running on {device}")
 
+    # --- Reproducibility: set global seeds and deterministic flags ---
+    seed = 42
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+    # Force deterministic algorithms where possible (may slow down)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+    # Use a seeded Generator for DataLoader shuffling
+    dl_generator = torch.Generator()
+    dl_generator.manual_seed(seed)
+
     print("Creating DataLoaders...")
 
     train_loader = DataLoader(
@@ -39,6 +56,7 @@ def train_and_validate(
         shuffle=True,
         num_workers=2,
         pin_memory=True,
+        generator=dl_generator,
     )
     val_loader = DataLoader(
         val_dataset,
@@ -46,6 +64,7 @@ def train_and_validate(
         shuffle=False,
         num_workers=2,
         pin_memory=True,
+        generator=dl_generator,  # not necessary for shuffle=False but included for determinism
     )
 
     # Model, loss, optimizer, metrics
