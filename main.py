@@ -82,9 +82,7 @@ def train_and_validate(
 
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(
-        model.parameters(), lr=learning_rate, weight_decay=1e-4
-    )
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-4)
 
     f1_metric = MulticlassF1Score(num_classes=2, average="macro").to(device)
     confmat_metric = MulticlassConfusionMatrix(num_classes=2).to(device)
@@ -196,9 +194,7 @@ def train_and_validate(
                     "train_accuracy": train_accuracy,
                     "val_loss": avg_val_loss,
                     "val_accuracy": val_accuracy,
-                    "val_f1": (
-                        val_f1.item() if hasattr(val_f1, "item") else val_f1
-                    ),
+                    "val_f1": (val_f1.item() if hasattr(val_f1, "item") else val_f1),
                 },
                 step=epoch,
             )
