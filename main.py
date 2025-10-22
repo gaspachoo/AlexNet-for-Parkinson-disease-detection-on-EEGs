@@ -183,7 +183,7 @@ def train_and_validate(
             val_f1 = f1_metric.compute()
 
             print(
-                f"Epoch [{epoch+1}/{num_epochs}] "
+                f"Epoch [{epoch + 1}/{num_epochs}] "
                 f"Train Loss: {train_loss:.4f}, Train Acc: {train_accuracy:.2f}% "
                 f"Val Loss: {avg_val_loss:.4f}, Val Acc: {val_accuracy:.2f}%, Val F1: {val_f1:.4f}"
             )
@@ -221,7 +221,7 @@ def train_and_validate(
             else:
                 patience_counter += 1
                 if patience_counter >= patience:
-                    print(f"Early stopping at epoch {epoch+1}")
+                    print(f"Early stopping at epoch {epoch + 1}")
                     break
 
         print("Training complete.")

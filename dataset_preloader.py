@@ -76,7 +76,7 @@ def preload_dataset(
 
     if save:
         path = "./Datasets_pt/"
-        dataset_name = "iowa" if mode == "iowa" else f'sd_{medication or "onandoff"}'
+        dataset_name = "iowa" if mode == "iowa" else f"sd_{medication or 'onandoff'}"
         train_path = path + f"train_{dataset_name}_{electrode_name}.pt"
         val_path = path + f"val_{dataset_name}_{electrode_name}.pt"
 

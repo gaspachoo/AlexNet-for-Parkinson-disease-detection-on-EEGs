@@ -38,7 +38,7 @@ def modern_cleaning(eeg_data, sfreq=128):
     """
 
     n_channels, n_times = eeg_data.shape
-    ch_names = [f"EEG {i+1}" for i in range(n_channels)]
+    ch_names = [f"EEG {i + 1}" for i in range(n_channels)]
     ch_types = ["eeg"] * n_channels
 
     info = mne.create_info(ch_names=ch_names, sfreq=sfreq, ch_types=ch_types)

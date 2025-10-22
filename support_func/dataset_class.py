@@ -75,9 +75,9 @@ class EEGDataset_1D(Dataset):
                     f"Dataset filtered: {len(filtered_data)} samples (HC + PD {medication.upper()})"
                 )
 
-        assert len(self.eeg_data) == len(
-            self.labels
-        ), "Mismatch between EEG data and labels."
+        assert len(self.eeg_data) == len(self.labels), (
+            "Mismatch between EEG data and labels."
+        )
 
     def __len__(self):
         return len(self.eeg_data)
