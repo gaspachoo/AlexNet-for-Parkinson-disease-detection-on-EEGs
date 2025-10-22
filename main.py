@@ -1,19 +1,21 @@
-from support_func.NN_classes import AlexNetCustom
+import os
+import random
+
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision.models as models
 from torch.utils.data import DataLoader
 from torchmetrics.classification import (
-    MulticlassF1Score,
     MulticlassConfusionMatrix,
+    MulticlassF1Score,
 )
-import matplotlib.pyplot as plt
-import seaborn as sns
+
 import wandb
-import os
-import random
-import numpy as np
+from support_func.NN_classes import AlexNetCustom
 
 
 def train_and_validate(
