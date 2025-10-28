@@ -276,13 +276,12 @@ def apply_filtering_techniques(signal, all_channels, target_channel_idx, fs):
             print(f"Warning: Modern cleaning (MNE ICA) failed: {e}")
 
     # SKL Fast ICA (applied to all channels)
-    if all_channels is not None and all_channels.shape[0] == 32:
+    if all_channels is not None and all_channels.shape[0] > 1:
         try:
-            skl_cleaned = SKLFast_ICA(all_channels, lda=6)
+            skl_cleaned = SKLFast_ICA(all_channels, lda=2.5)
             results["SKL Fast ICA"] = skl_cleaned[target_channel_idx]
         except Exception as e:
             print(f"Warning: SKL Fast ICA failed: {e}")
-            print("Note: SKL Fast ICA requires exactly 32 channels")
 
     return results
 
