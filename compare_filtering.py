@@ -249,22 +249,22 @@ def apply_filtering_techniques(signal, all_channels, target_channel_idx, fs):
     results["Raw Signal"] = signal
 
     # === MONO-CHANNEL TECHNIQUES ===
-    # Bandpass filter
-    results["Bandpass Filter"] = bandpass_filter(signal, lowcut=0.5, highcut=40, fs=fs)
+    # All techniques start with bandpass filtering (1-40 Hz) for consistency
 
-    # Wavelet denoising
-    results["Wavelet Denoising"] = wavelet_denoising(signal, wavelet="db4", level=4)
+    # 1. Bandpass filter only
+    results["Bandpass Filter"] = bandpass_filter(signal, lowcut=1.0, highcut=40, fs=fs)
 
-    # MATLAB-like cleaning (works on 2D array)
-    signal_2d = signal.reshape(1, -1) if signal.ndim == 1 else signal
+    # 2. Bandpass + Wavelet denoising
+    bp_signal = bandpass_filter(signal, lowcut=1.0, highcut=40, fs=fs)
+    results["Bandpass + Wavelet"] = wavelet_denoising(bp_signal, wavelet="db4", level=4)
+
+    # 3. Bandpass + MATLAB-like cleaning
+    bp_signal = bandpass_filter(signal, lowcut=1.0, highcut=40, fs=fs)
+    signal_2d = bp_signal.reshape(1, -1)
     matlab_cleaned = matlab_like_cleaning(signal_2d, polyorder=5, window_length=127)
-    results["MATLAB-like Cleaning"] = (
+    results["Bandpass + MATLAB Cleaning"] = (
         matlab_cleaned[0] if matlab_cleaned.ndim == 2 else matlab_cleaned
     )
-
-    # Bandpass + Wavelet combo
-    bp_signal = bandpass_filter(signal, lowcut=0.5, highcut=40, fs=fs)
-    results["Bandpass + Wavelet"] = wavelet_denoising(bp_signal, wavelet="db4", level=4)
 
     # === MULTI-CHANNEL TECHNIQUES ===
     # Modern cleaning with MNE ICA (applied to all channels)

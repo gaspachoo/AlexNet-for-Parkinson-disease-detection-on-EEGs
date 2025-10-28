@@ -209,10 +209,11 @@ def SKLFast_ICA(eeg_data, lda=2.5):
         print(f"  Warning: SKLFast_ICA optimized for 32 channels, got {n_channels}.")
 
     # Step 1: Apply bandpass filter to each channel (remove drift and high-freq noise)
+    # Using 1-40 Hz for consistency across all techniques
     filtered_eeg = np.zeros_like(eeg_data)
     for ch in range(n_channels):
         filtered_eeg[ch, :] = bandpass_filter(
-            eeg_data[ch, :], lowcut=0.5, highcut=40, fs=128
+            eeg_data[ch, :], lowcut=1.0, highcut=40, fs=128
         )
 
     # Step 2: Normalize for ICA (critical for convergence)
