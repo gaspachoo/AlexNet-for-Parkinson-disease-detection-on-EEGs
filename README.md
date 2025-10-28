@@ -11,6 +11,7 @@ The repository is organized as follows:
 - **`dataset_preloader.py`** – CLI tool for EEG dataset preprocessing with Wavelet Scattering Transform (WST). Generates `.pt` files ready for training.
 - **`main.py`** – Main CLI entry point for model training with argparse interface.
 - **`train_and_validate.py`** – Core training and validation logic module, including DataLoader setup, training loop, metrics, early stopping, and checkpointing.
+- **`compare_filtering.py`** – CLI tool to compare raw EEG signals with various filtering techniques using matplotlib subplots.
 - **`tfr_plotter.py`** – Generates visualizations for EEG signal transformations.
 - **`support_func/`** – Utility functions supporting various aspects of the pipeline:
   - **_`dataset_class.py`_** – Contains the class `EEGDataset_1D`.
@@ -101,6 +102,47 @@ uv run python main.py --mode san_diego --model resnet --electrode Fz --medicatio
 - `--learning_rate`: Learning rate (default: 1e-4)
 - `--patience`: Early stopping patience (default: 15)
 
+### 4️⃣ Compare filtering techniques (optional)
+
+Visualize and compare different EEG filtering techniques on raw signals:
+
+**For Iowa dataset:**
+
+```bash
+# Format: --subject "group_idx,subject_idx" where group_idx: 0=PD, 1=Control
+uv run python compare_filtering.py --dataset iowa --electrode AFz --subject "0,5" --duration 10
+```
+
+**For San Diego dataset:**
+
+```bash
+# Healthy control
+uv run python compare_filtering.py --dataset san_diego --electrode Fz --subject hc1 --session hc --duration 10
+
+# PD patient OFF medication
+uv run python compare_filtering.py --dataset san_diego --electrode Fz --subject pd11 --session off --duration 10
+```
+
+**Available filtering techniques compared:**
+
+- Raw Signal (unfiltered)
+- Bandpass Filter (0.5-40 Hz)
+- Wavelet Denoising (db4, level 4)
+- MATLAB-like Cleaning (Savitzky-Golay + wavelet thresholding)
+- Bandpass + Wavelet (combination)
+
+**Optional arguments:**
+
+- `--duration`: Duration to display in seconds (default: 10)
+
+### 5️⃣ Visualize time-frequency representations (optional)
+
+Plot time-frequency representations:
+
+```bash
+uv run python tfr_plotter.py
+```
+
 ## 📈 Results & Performance Analysis
 
 Training results are automatically logged with **Weights & Biases (wandb)** and include:
@@ -112,14 +154,12 @@ Training results are automatically logged with **Weights & Biases (wandb)** and 
 
 A confusion matrix is generated at the end of the validation step.
 
-The impact of different preprocessing techniques (e.g., Wavelet Scattering Transform, bandpass filtering) can be analyzed using `bash
-uv run python tfr_plotter.py`
-
 ## 🎯 Key Features
 
 - ✅ **Reproducible training** with fixed random seeds (`seed=42`)
 - ✅ **CLI-based workflow** using `argparse` for all scripts
 - ✅ **Modular architecture** separating data preprocessing, training logic, and visualization
+- ✅ **Filtering comparison tool** to visualize and compare multiple signal processing techniques
 - ✅ **Early stopping** to prevent overfitting
 - ✅ **Automatic checkpointing** for model recovery
 - ✅ **Multi-dataset support** (Iowa, San Diego)
