@@ -98,7 +98,12 @@ def process_and_save(indices, dataset, transform, fs, filter_method="bandpass"):
 
 
 def preload_dataset(
-    mode, electrode_name, segment_duration, save=False, medication=None, filter_method="bandpass"
+    mode,
+    electrode_name,
+    segment_duration,
+    save=False,
+    medication=None,
+    filter_method="bandpass",
 ):
     if mode == "iowa":
         folder_path = "./Data/iowa/IowaData.mat"
