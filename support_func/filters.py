@@ -55,7 +55,7 @@ def modern_cleaning(eeg_data, sfreq=128):
     )
     ica.fit(raw)
 
-    # Comment out automatic artifact detection (no EOG channels)
+    # Comment out automatic artifact detection (no EOG/ECG channels in our data)
     # eog_inds, scores = ica.find_bads_eog(raw)
     # ecg_inds, scores = ica.find_bads_ecg(raw)
     # ica.exclude = eog_inds + ecg_inds
