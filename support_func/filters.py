@@ -135,12 +135,6 @@ def MNE_ICA_Wavelet(eeg_data, sfreq=128):
 
     return cleaned_data
 
-    cleaned_data = raw_clean.get_data()
-    for ch in range(n_channels):
-        cleaned_data[ch, :] = wavelet_denoising(cleaned_data[ch, :])
-
-    return cleaned_data
-
 
 def SavGol_Wavelet(eeg_data, polyorder=5, window_length=127, wavelet="db2", level=4):
     """
