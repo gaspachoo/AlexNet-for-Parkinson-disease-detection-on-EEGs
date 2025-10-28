@@ -62,18 +62,25 @@ Apply Wavelet Scattering Transform and generate train/validation `.pt` files:
 **For Iowa dataset:**
 
 ```bash
-uv run python dataset_preloader.py --mode iowa --electrode AFz
+uv run python dataset_preloader.py --mode iowa --electrode AFz --filter bandpass
 ```
 
 **For San Diego dataset (with medication status):**
 
 ```bash
-uv run python dataset_preloader.py --mode san_diego --electrode Fz --medication off
+uv run python dataset_preloader.py --mode san_diego --electrode Fz --medication off --filter wavelet
 ```
 
 **Optional arguments:**
 
 - `--segment_duration`: Segment duration in seconds (default: 5)
+- `--filter`: Filtering method to apply (default: `bandpass`). Options:
+  - `none`: No filtering (raw signal)
+  - `bandpass`: Bandpass filter only (1-40 Hz)
+  - `wavelet`: Bandpass + Wavelet denoising (db4, level 4)
+  - `savgol`: Bandpass + SavGol-Wavelet (Savitzky-Golay + wavelet thresholding)
+
+> **Note:** Multi-channel ICA methods (MNE ICA, SKL Fast ICA) are not available for dataset preprocessing because they require loading all EEG channels simultaneously for continuous recordings before segmentation. Use `compare_filtering.py` to evaluate ICA techniques on full recordings.
 
 ### 3️⃣ Train the model
 

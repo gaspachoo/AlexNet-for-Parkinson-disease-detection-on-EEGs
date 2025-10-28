@@ -13,10 +13,38 @@ from sklearn.model_selection import train_test_split
 
 import support_func.wavelet_transform as wt
 from support_func.dataset_class import EEGDataset_1D
-from support_func.filters import SavGol_Wavelet, bandpass_filter
+from support_func.filters import (
+    SavGol_Wavelet,
+    bandpass_filter,
+    wavelet_denoising,
+)
 
 
-def process_and_save(indices, dataset, transform, fs):
+def process_and_save(indices, dataset, transform, fs, filter_method="bandpass"):
+    """
+    Process EEG samples with specified filtering method and WST.
+
+    Parameters:
+        indices: Sample indices to process
+        dataset: Raw EEG dataset
+        transform: WST transform to apply
+        fs: Sampling frequency
+        filter_method: Filtering method to use. Options:
+            - "bandpass": Bandpass filter only (1-40 Hz)
+            - "wavelet": Bandpass + Wavelet denoising
+            - "savgol": Bandpass + SavGol-Wavelet
+            - "none": No filtering (raw signal)
+
+    Note: Multi-channel ICA methods (mne_ica, skl_ica) are not supported yet
+          because they require loading all channels for each segment, which is
+          not compatible with the current dataset structure that segments signals
+          before loading. ICA should ideally be applied to continuous recordings
+          before segmentation.
+
+    Returns:
+        all_images: Stacked WST-transformed images
+        all_labels: Tensor of labels
+    """
     images_list = []
     labels_list = []
     n_indices = len(indices)
@@ -24,12 +52,37 @@ def process_and_save(indices, dataset, transform, fs):
     for i, idx in enumerate(indices):
         sample = dataset[idx]  # e.g. {"eeg": shape (60600,), "label": 0/1}
         image = sample["eeg"]
-        image_filtered = bandpass_filter(
-            image.T, lowcut=0.5, highcut=40.0, fs=fs, order=4
-        )
-        image_filtered = SavGol_Wavelet(image_filtered).T
-        # image_filtered = savgol_filter(image.T, window_length=11, polyorder=3).T
-        sample["eeg"] = image_filtered
+
+        # Apply selected filtering method
+        if filter_method == "none":
+            image_filtered = image.T
+        elif filter_method == "bandpass":
+            image_filtered = bandpass_filter(
+                image.T, lowcut=1.0, highcut=40.0, fs=fs, order=4
+            )
+        elif filter_method == "wavelet":
+            bp_signal = bandpass_filter(
+                image.T, lowcut=1.0, highcut=40.0, fs=fs, order=4
+            )
+            image_filtered = wavelet_denoising(bp_signal, wavelet="db4", level=4)
+        elif filter_method == "savgol":
+            bp_signal = bandpass_filter(
+                image.T, lowcut=1.0, highcut=40.0, fs=fs, order=4
+            )
+            # SavGol_Wavelet expects 2D input (channels, samples)
+            signal_2d = bp_signal.reshape(1, -1)
+            image_filtered = SavGol_Wavelet(signal_2d, polyorder=5, window_length=127)
+            image_filtered = (
+                image_filtered[0] if image_filtered.ndim == 2 else image_filtered
+            )
+        else:
+            raise ValueError(
+                f"Unknown filter method: {filter_method}. "
+                "Choose from: 'none', 'bandpass', 'wavelet', 'savgol'. "
+                "Note: Multi-channel ICA methods are not yet supported for dataset preprocessing."
+            )
+
+        sample["eeg"] = image_filtered.T
         out = transform(sample)
         images_list.append(out["image"])
         labels_list.append(out["label"])
@@ -45,7 +98,7 @@ def process_and_save(indices, dataset, transform, fs):
 
 
 def preload_dataset(
-    mode, electrode_name, segment_duration, save=False, medication=None
+    mode, electrode_name, segment_duration, save=False, medication=None, filter_method="bandpass"
 ):
     if mode == "iowa":
         folder_path = "./Data/iowa/IowaData.mat"
@@ -77,9 +130,11 @@ def preload_dataset(
 
     print("Processing and saving")
     train_images, train_labels = process_and_save(
-        train_idx, raw_dataset, transform_wst, fs
+        train_idx, raw_dataset, transform_wst, fs, filter_method
     )
-    val_images, val_labels = process_and_save(val_idx, raw_dataset, transform_wst, fs)
+    val_images, val_labels = process_and_save(
+        val_idx, raw_dataset, transform_wst, fs, filter_method
+    )
 
     train_dataset = list(zip(train_images, train_labels))
     val_dataset = list(zip(val_images, val_labels))
@@ -140,6 +195,13 @@ def main():
         default=5,
         help="Segment duration in seconds (default: 5).",
     )
+    parser.add_argument(
+        "--filter",
+        type=str,
+        default="bandpass",
+        choices=["none", "bandpass", "wavelet", "savgol"],
+        help="Filtering method to apply (default: 'bandpass'). Options: 'none' (no filtering), 'bandpass' (1-40 Hz), 'wavelet' (bandpass + wavelet denoising), 'savgol' (bandpass + SavGol-Wavelet).",
+    )
 
     # Parse arguments
     args = parser.parse_args()
@@ -151,6 +213,7 @@ def main():
     print(f"Mode:              {args.mode}")
     print(f"Electrode:         {args.electrode}")
     print(f"Segment duration:  {args.segment_duration} seconds")
+    print(f"Filter method:     {args.filter}")
     if args.mode == "san_diego":
         print(f"Medication:        {args.medication or 'all (on + off)'}")
     print("=" * 60 + "\n")
@@ -162,6 +225,7 @@ def main():
         segment_duration=args.segment_duration,
         save=True,
         medication=args.medication,
+        filter_method=args.filter,
     )
 
     print("\nDataset preprocessing complete!")
