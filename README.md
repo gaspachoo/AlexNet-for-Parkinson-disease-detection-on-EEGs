@@ -125,11 +125,15 @@ uv run python compare_filtering.py --dataset san_diego --electrode Fz --subject 
 
 **Available filtering techniques compared:**
 
-- Raw Signal (unfiltered)
-- Bandpass Filter (0.5-40 Hz)
-- Wavelet Denoising (db4, level 4)
-- MATLAB-like Cleaning (Savitzky-Golay + wavelet thresholding)
-- Bandpass + Wavelet (combination)
+- **Raw Signal** (unfiltered)
+- **Bandpass Filter** (0.5-40 Hz) - mono-channel
+- **Wavelet Denoising** (db4, level 4) - mono-channel
+- **MATLAB-like Cleaning** (Savitzky-Golay + wavelet thresholding) - mono-channel
+- **Bandpass + Wavelet** (combination) - mono-channel
+- **Modern Cleaning** (MNE ICA + bandpass + wavelet) - multi-channel, all channels loaded
+- **SKL Fast ICA** (FastICA artifact removal) - multi-channel, requires 32 channels
+
+> **Note:** Multi-channel techniques (Modern Cleaning, SKL Fast ICA) load all EEG channels and apply ICA across them for optimal artifact removal, then extract the target channel for visualization.
 
 **Optional arguments:**
 

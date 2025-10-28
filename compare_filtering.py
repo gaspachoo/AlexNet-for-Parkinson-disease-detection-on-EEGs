@@ -15,10 +15,65 @@ import mne
 import numpy as np
 
 from support_func.filters import (
+    SKLFast_ICA,
     bandpass_filter,
     matlab_like_cleaning,
+    modern_cleaning,
     wavelet_denoising,
 )
+
+
+def load_iowa_all_channels(data_dir, electrode_list_path, subject_idx=0, group_idx=0):
+    """
+    Load ALL EEG channels from Iowa dataset for a specific subject.
+
+    Parameters:
+        data_dir: Path to IowaData.mat
+        electrode_list_path: Path to electrode_list.txt
+        subject_idx: Subject index within group (0-13)
+        group_idx: Group index (0=PD, 1=Control)
+
+    Returns:
+        all_signals: 2D numpy array (n_channels, n_samples)
+        electrode_list: List of electrode names
+        fs: Sampling frequency
+    """
+    with open(electrode_list_path, "r", encoding="utf-8") as f:
+        electrode_list = f.read().strip().split()
+
+    fs = 500  # Iowa sampling frequency
+    all_signals = []
+
+    with h5py.File(data_dir, "r") as f:
+        EEG_data = f["EEG"]
+
+        for electrode_index in range(len(electrode_list)):
+            ch_ref = (
+                EEG_data[electrode_index][0, 0]
+                if EEG_data[electrode_index].shape == (1, 1)
+                else EEG_data[electrode_index][0]
+            )
+            ch_data = f[ch_ref]
+
+            group_ref = (
+                ch_data[group_idx][0]
+                if ch_data[group_idx].shape == (1,)
+                else ch_data[group_idx]
+            )
+            group_data = f[group_ref]
+
+            patient_ref = (
+                group_data[subject_idx][0]
+                if group_data[subject_idx].shape == (1,)
+                else group_data[subject_idx]
+            )
+            patient_data = f[patient_ref]
+
+            signal = patient_data[:].flatten()
+            all_signals.append(signal)
+
+    all_signals = np.array(all_signals)
+    return all_signals, electrode_list, fs
 
 
 def load_iowa_signal(
@@ -76,6 +131,51 @@ def load_iowa_signal(
     return signal, fs
 
 
+def load_san_diego_all_channels(data_dir, subject_id, session="hc"):
+    """
+    Load ALL EEG channels from San Diego dataset for a specific subject.
+
+    Parameters:
+        data_dir: Path to san_diego directory
+        subject_id: Subject identifier (e.g., 'hc1', 'pd11')
+        session: Session type ('hc', 'on', 'off')
+
+    Returns:
+        all_signals: 2D numpy array (n_channels, n_samples)
+        electrode_names: List of electrode names
+        fs: Sampling frequency
+    """
+    # Construct file path
+    if subject_id.startswith("hc"):
+        bdf_path = os.path.join(
+            data_dir,
+            f"sub-{subject_id}",
+            "ses-hc",
+            "eeg",
+            f"sub-{subject_id}_ses-hc_task-rest_eeg.bdf",
+        )
+    else:  # PD patient
+        bdf_path = os.path.join(
+            data_dir,
+            f"sub-{subject_id}",
+            f"ses-{session}",
+            "eeg",
+            f"sub-{subject_id}_ses-{session}_task-rest_eeg.bdf",
+        )
+
+    if not os.path.exists(bdf_path):
+        raise FileNotFoundError(f"File not found: {bdf_path}")
+
+    # Load with MNE
+    raw = mne.io.read_raw_bdf(bdf_path, preload=True, verbose=False)
+    fs = raw.info["sfreq"]
+
+    all_signals = raw.get_data()
+    electrode_names = raw.ch_names
+
+    return all_signals, electrode_names, fs
+
+
 def load_san_diego_signal(data_dir, electrode_name, subject_id, session="hc"):
     """
     Load a single EEG signal from San Diego dataset for a specific subject and electrode.
@@ -127,23 +227,28 @@ def load_san_diego_signal(data_dir, electrode_name, subject_id, session="hc"):
     return signal, fs
 
 
-def apply_filtering_techniques(signal, fs, use_multichannel=False):
+def apply_filtering_techniques(signal, all_channels, target_channel_idx, fs):
     """
     Apply various filtering techniques to the signal.
 
+    For mono-channel techniques: apply to single channel signal
+    For multi-channel techniques (ICA): apply to all channels, then extract target channel
+
     Parameters:
-        signal: 1D numpy array (or 2D if use_multichannel=True)
+        signal: 1D numpy array (single target channel)
+        all_channels: 2D numpy array (n_channels, n_samples) - all EEG channels
+        target_channel_idx: Index of the target channel in all_channels
         fs: Sampling frequency
-        use_multichannel: Whether to use multi-channel techniques (ICA)
 
     Returns:
-        Dictionary of filtered signals
+        Dictionary of filtered signals (all 1D arrays for the target channel)
     """
     results = {}
 
     # Original signal
     results["Raw Signal"] = signal
 
+    # === MONO-CHANNEL TECHNIQUES ===
     # Bandpass filter
     results["Bandpass Filter"] = bandpass_filter(signal, lowcut=0.5, highcut=40, fs=fs)
 
@@ -160,6 +265,24 @@ def apply_filtering_techniques(signal, fs, use_multichannel=False):
     # Bandpass + Wavelet combo
     bp_signal = bandpass_filter(signal, lowcut=0.5, highcut=40, fs=fs)
     results["Bandpass + Wavelet"] = wavelet_denoising(bp_signal, wavelet="db4", level=4)
+
+    # === MULTI-CHANNEL TECHNIQUES ===
+    # Modern cleaning with MNE ICA (applied to all channels)
+    if all_channels is not None and all_channels.shape[0] > 1:
+        try:
+            mne_cleaned = modern_cleaning(all_channels, sfreq=fs)
+            results["Modern Cleaning (MNE ICA)"] = mne_cleaned[target_channel_idx]
+        except Exception as e:
+            print(f"Warning: Modern cleaning (MNE ICA) failed: {e}")
+
+    # SKL Fast ICA (applied to all channels)
+    if all_channels is not None and all_channels.shape[0] == 32:
+        try:
+            skl_cleaned = SKLFast_ICA(all_channels, lda=6)
+            results["SKL Fast ICA"] = skl_cleaned[target_channel_idx]
+        except Exception as e:
+            print(f"Warning: SKL Fast ICA failed: {e}")
+            print("Note: SKL Fast ICA requires exactly 32 channels")
 
     return results
 
@@ -284,9 +407,19 @@ def main():
             print(
                 f"Loading Iowa data: Group {group_idx} ({'PD' if group_idx == 0 else 'Control'}), Subject {subject_idx}..."
             )
-            signal, fs = load_iowa_signal(
-                data_dir, electrode_list_path, args.electrode, subject_idx, group_idx
+
+            # Load ALL channels
+            all_channels, electrode_names, fs = load_iowa_all_channels(
+                data_dir, electrode_list_path, subject_idx, group_idx
             )
+
+            # Get target channel index and signal
+            if args.electrode not in electrode_names:
+                raise ValueError(
+                    f"Electrode {args.electrode} not found in electrode list."
+                )
+            target_channel_idx = electrode_names.index(args.electrode)
+            signal = all_channels[target_channel_idx]
 
         else:  # san_diego
             data_dir = "./Data/san_diego"
@@ -294,17 +427,32 @@ def main():
             print(
                 f"Loading San Diego data: Subject {args.subject}, Session {args.session}..."
             )
-            signal, fs = load_san_diego_signal(
-                data_dir, args.electrode, args.subject, args.session
+
+            # Load ALL channels
+            all_channels, electrode_names, fs = load_san_diego_all_channels(
+                data_dir, args.subject, args.session
             )
 
-        print(f"Signal loaded: {len(signal)} samples, {fs} Hz")
+            # Get target channel index and signal
+            if args.electrode not in electrode_names:
+                raise ValueError(
+                    f"Electrode {args.electrode} not found in channels: {electrode_names}"
+                )
+            target_channel_idx = electrode_names.index(args.electrode)
+            signal = all_channels[target_channel_idx]
+
+        print(
+            f"✅ All channels loaded: {all_channels.shape[0]} channels, {all_channels.shape[1]} samples, {fs} Hz"
+        )
+        print(f"   Target channel: {args.electrode} (index {target_channel_idx})")
         print(f"   Duration: {len(signal) / fs:.2f} seconds\n")
 
         # Apply filtering techniques
         print("Applying filtering techniques...")
-        filtered_results = apply_filtering_techniques(signal, fs)
-        print(f"{len(filtered_results)} techniques applied\n")
+        filtered_results = apply_filtering_techniques(
+            signal, all_channels, target_channel_idx, fs
+        )
+        print(f"✅ {len(filtered_results)} techniques applied\n")
 
         # Plot comparison
         print("Generating comparison plot...")

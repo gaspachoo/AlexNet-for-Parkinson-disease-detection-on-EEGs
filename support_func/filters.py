@@ -46,7 +46,13 @@ def modern_cleaning(eeg_data, sfreq=128):
 
     raw.filter(1.0, 40.0, fir_design="firwin")
 
-    ica = mne.preprocessing.ICA(n_components=15, random_state=97, max_iter="auto")
+    # Adapt n_components to the number of channels available
+    # ICA can't extract more components than channels
+    n_components = min(15, n_channels)
+
+    ica = mne.preprocessing.ICA(
+        n_components=n_components, random_state=97, max_iter="auto"
+    )
     ica.fit(raw)
 
     # Comment out automatic artifact detection (no EOG channels)
