@@ -263,7 +263,7 @@ def main():
 
     # Load signal based on dataset
     print("\n" + "=" * 60)
-    print("🔬 EEG Signal Filtering Comparison")
+    print("EEG Signal Filtering Comparison")
     print("=" * 60)
     print(f"Dataset:    {args.dataset}")
     print(f"Electrode:  {args.electrode}")
@@ -298,20 +298,20 @@ def main():
                 data_dir, args.electrode, args.subject, args.session
             )
 
-        print(f"✅ Signal loaded: {len(signal)} samples, {fs} Hz")
+        print(f"Signal loaded: {len(signal)} samples, {fs} Hz")
         print(f"   Duration: {len(signal) / fs:.2f} seconds\n")
 
         # Apply filtering techniques
         print("Applying filtering techniques...")
         filtered_results = apply_filtering_techniques(signal, fs)
-        print(f"✅ {len(filtered_results)} techniques applied\n")
+        print(f"{len(filtered_results)} techniques applied\n")
 
         # Plot comparison
         print("Generating comparison plot...")
         plot_comparison(filtered_results, fs, duration=args.duration)
 
     except Exception as e:
-        print(f"\n❌ Error: {e}")
+        print(f"\nError: {e}")
         sys.exit(1)
 
 
