@@ -8,17 +8,21 @@ This project focuses on implementing and evaluating different neural network arc
 
 The repository is organized as follows:
 
-- **`dataset_preloader.py`** – Automates dataset preprocessing and loading.
-- **`main.py`** – Entry point to execute the training and evaluation process.
+- **`dataset_preloader.py`** – CLI tool for EEG dataset preprocessing with Wavelet Scattering Transform (WST). Generates `.pt` files ready for training.
+- **`main.py`** – Main CLI entry point for model training with argparse interface.
+- **`train_and_validate.py`** – Core training and validation logic module, including DataLoader setup, training loop, metrics, early stopping, and checkpointing.
 - **`tfr_plotter.py`** – Generates visualizations for EEG signal transformations.
-- **`support_func/`** – Contains utility functions supporting various aspects of the pipeline:
+- **`support_func/`** – Utility functions supporting various aspects of the pipeline:
   - **_`dataset_class.py`_** – Contains the class `EEGDataset_1D`.
-  - **_`filters.py`_** – Contains the `bandpass_filter`.
-  - **_`import_data.py`_** – Handles dataset loading and formatting.
-  - **_`NN_classes.py`_** – Defines the neural network architectures, including AlexNet-based models.
-  - **_`wavelet_transform.py`_** – Applies wavelet transformation for EEG feature extraction.
-- **`Data/`** – Stores the datasets source folders used for preparing the training and testing.
-- **`Datasets_pt/`** – Stores the datasets in .pt format, ready to be used for training and testing.
+  - **_`filters.py`_** – Implements `bandpass_filter` and `matlab_like_cleaning` for signal preprocessing.
+  - **_`import_data.py`_** – Handles dataset loading and formatting from Iowa and San Diego sources.
+  - **_`NN_classes.py`_** – Defines neural network architectures (AlexNetCustom, ResNet18).
+  - **_`wavelet_transform.py`_** – Applies Wavelet Scattering Transform (WST) with Kymatio for EEG feature extraction.
+- **`Data/`** – Stores the raw datasets:
+  - **_`iowa/`_** – Iowa Neuroscience Institute dataset.
+  - **_`san_diego/`_** – OpenNeuro ds002778 dataset with Parkinson's Disease patients.
+- **`Datasets_pt/`** – Preprocessed datasets in `.pt` format (train/validation splits), ready for training.
+- **`Checkpoints/`** – Saved model checkpoints and final trained models.
 
 ## 📊 Datasets Used
 
@@ -27,10 +31,12 @@ The project utilizes EEG data from the following sources:
 1. [Iowa Neuroscience Institute](https://narayanan.lab.uiowa.edu/home/data)
 2. [OpenNeuro Dataset (ds002778)](https://openneuro.org/datasets/ds002778/versions/1.0.5)
 
-## 🔬 Checkpoints Implemented
+## 🔬 Models Implemented
 
-- **AlexNet-based architecture** for EEG classification, inspired by [this study](https://www.sciencedirect.com/science/article/pii/S0010482524005468).
-- Additional baseline models (e.g., fully connected networks).
+- **AlexNetCustom** – Custom AlexNet-based architecture for EEG classification (5 convolutional layers + 3 fully connected layers), inspired by [this study](https://www.sciencedirect.com/science/article/pii/S0010482524005468).
+- **ResNet18** – Pretrained ResNet18 architecture adapted for EEG classification.
+
+Both models use **Wavelet Scattering Transform (WST)** with `J=10` and `Q=24` to convert 1D EEG signals into 2D RGB images (227×227) suitable for CNN processing.
 
 ## ⚙️ Installation & Requirements
 
@@ -46,28 +52,83 @@ uv sync
 
 ## 🚀 How to Run
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/gaspachoo/AlexNet-for-Parkinson-disease-detection-on-EEGs.git
-   cd AlexNet-for-Parkinson-disease-detection-on-EEGs
-   ```
-2. Preprocess the EEG dataset:
-   ```bash
-   uv run dataset_preloader.py
-   ```
-3. Train the model:
-   ```bash
-   uv run main.py
-   ```
-4. Plot data:
-   ```bash
-   uv run tfr_plotter.py
-   ```
+### 1️⃣ Clone the repository
+
+```bash
+git clone https://github.com/gaspachoo/AlexNet-for-Parkinson-disease-detection-on-EEGs.git
+cd AlexNet-for-Parkinson-disease-detection-on-EEGs
+```
+
+### 2️⃣ Preprocess the EEG dataset
+
+Apply Wavelet Scattering Transform and generate train/validation `.pt` files:
+
+**For Iowa dataset:**
+
+```bash
+uv run python dataset_preloader.py --mode iowa --electrode AFz
+```
+
+**For San Diego dataset (with medication status):**
+
+```bash
+uv run python dataset_preloader.py --mode san_diego --electrode Fz --medication off
+```
+
+**Optional arguments:**
+
+- `--segment_duration`: Segment duration in seconds (default: 5)
+
+### 3️⃣ Train the model
+
+Train with your chosen configuration:
+
+**Example with Iowa dataset:**
+
+```bash
+uv run python main.py --mode iowa --model alexnet --electrode AFz --epochs 200 --batch_size 20 --learning_rate 1e-4 --patience 15
+```
+
+**Example with San Diego dataset:**
+
+```bash
+uv run python main.py --mode san_diego --model resnet --electrode Fz --medication off --epochs 200
+```
+
+**Available arguments:**
+
+- `--mode`: Dataset mode (`iowa` or `san_diego`)
+- `--model`: Model architecture (`alexnet` or `resnet`)
+- `--electrode`: Electrode name (e.g., `AFz`, `Fz`)
+- `--medication`: Medication status for San Diego (`on` or `off`, default: `on`)
+- `--epochs`: Maximum training epochs (default: 200)
+- `--batch_size`: Batch size (default: 20)
+- `--learning_rate`: Learning rate (default: 1e-4)
+- `--patience`: Early stopping patience (default: 15)
 
 ## 📈 Results & Performance Analysis
 
-Results are plot after executing **`main.py`**, including confusion matrices and classification reports.  
-The impact of different preprocessing techniques (e.g., wavelet transform, filtering) is analyzed in **`tfr_plotter.py`**.
+Training results are automatically logged with **Weights & Biases (wandb)** and include:
+
+- Training/validation loss curves
+- F1-score (macro) metrics
+- Confusion matrices visualization
+- Model checkpoints saved in `Checkpoints/`
+
+A confusion matrix is generated at the end of the validation step.
+
+The impact of different preprocessing techniques (e.g., Wavelet Scattering Transform, bandpass filtering) can be analyzed using ```bash
+uv run python tfr_plotter.py```
+
+## 🎯 Key Features
+
+- ✅ **Reproducible training** with fixed random seeds (`seed=42`)
+- ✅ **CLI-based workflow** using `argparse` for all scripts
+- ✅ **Modular architecture** separating data preprocessing, training logic, and visualization
+- ✅ **Early stopping** to prevent overfitting
+- ✅ **Automatic checkpointing** for model recovery
+- ✅ **Multi-dataset support** (Iowa, San Diego)
+- ✅ **Multiple architectures** (AlexNet, ResNet18)
 
 ## 🤝 Contributing
 

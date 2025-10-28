@@ -1,8 +1,18 @@
-import torch
+"""
+Dataset preprocessing script for EEG data.
+
+This script loads raw EEG data, applies filtering and Wavelet Scattering Transform (WST),
+then saves preprocessed datasets as .pt files for training.
+"""
+
+import argparse
+
 import numpy as np
+import torch
 from sklearn.model_selection import train_test_split
-from support_func.dataset_class import EEGDataset_1D
+
 import support_func.wavelet_transform as wt
+from support_func.dataset_class import EEGDataset_1D
 from support_func.filters import bandpass_filter, matlab_like_cleaning
 
 
@@ -92,11 +102,70 @@ def preload_dataset(
     return train_dataset, val_dataset
 
 
-if __name__ == "__main__":
-    segment_duration = 5  # in seconds
-    electrode_name = "Fz"  # AFz for iowa, Fz for sd
-    medication = "off"  # For iowa, None, for san_diego, on or off or None (not None for model training)
-    mode = "san_diego"  # iowa or san_diego
-    train_set, validate_set = preload_dataset(
-        mode, electrode_name, segment_duration, True, medication
+def main():
+    """
+    Main entry point for dataset preprocessing with CLI arguments.
+    """
+    # Argument parser setup
+    parser = argparse.ArgumentParser(
+        description="Preprocess EEG datasets and save as .pt files with WST transformation."
     )
+
+    # Required arguments
+    parser.add_argument(
+        "--mode",
+        type=str,
+        required=True,
+        choices=["iowa", "san_diego"],
+        help="Dataset mode: 'iowa' or 'san_diego'.",
+    )
+    parser.add_argument(
+        "--electrode",
+        type=str,
+        required=True,
+        help="Electrode name (e.g., 'AFz' for Iowa, 'Fz' for San Diego).",
+    )
+
+    # Optional arguments
+    parser.add_argument(
+        "--medication",
+        type=str,
+        default=None,
+        choices=["on", "off", None],
+        help="Medication status for San Diego dataset (default: None). Use 'on' or 'off' for binary classification. Ignored for Iowa.",
+    )
+    parser.add_argument(
+        "--segment_duration",
+        type=int,
+        default=5,
+        help="Segment duration in seconds (default: 5).",
+    )
+
+    # Parse arguments
+    args = parser.parse_args()
+
+    # Display configuration
+    print("\n" + "=" * 60)
+    print("Dataset Preprocessing Configuration")
+    print("=" * 60)
+    print(f"Mode:              {args.mode}")
+    print(f"Electrode:         {args.electrode}")
+    print(f"Segment duration:  {args.segment_duration} seconds")
+    if args.mode == "san_diego":
+        print(f"Medication:        {args.medication or 'all (on + off)'}")
+    print("=" * 60 + "\n")
+
+    # Run preprocessing
+    train_set, validate_set = preload_dataset(
+        mode=args.mode,
+        electrode_name=args.electrode,
+        segment_duration=args.segment_duration,
+        save=True,
+        medication=args.medication,
+    )
+
+    print("\nDataset preprocessing complete!")
+
+
+if __name__ == "__main__":
+    main()
