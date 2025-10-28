@@ -44,19 +44,14 @@ To set up the project, ensure you have **uv** installed on your device, and CUDA
 
 If for example you are running on a SLURM partition on a supercomputer, you may use an official Nvidia NGC Container such as [this one](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch?version=25.09-py3).
 
-Afterwards, you can then run :
-
-```bash
-uv sync
-```
-
 ## 🚀 How to Run
 
-### 1️⃣ Clone the repository
+### 1️⃣ Clone the repository and download the requirements
 
 ```bash
 git clone https://github.com/gaspachoo/AlexNet-for-Parkinson-disease-detection-on-EEGs.git
 cd AlexNet-for-Parkinson-disease-detection-on-EEGs
+uv sync
 ```
 
 ### 2️⃣ Preprocess the EEG dataset
@@ -117,8 +112,8 @@ Training results are automatically logged with **Weights & Biases (wandb)** and 
 
 A confusion matrix is generated at the end of the validation step.
 
-The impact of different preprocessing techniques (e.g., Wavelet Scattering Transform, bandpass filtering) can be analyzed using ```bash
-uv run python tfr_plotter.py```
+The impact of different preprocessing techniques (e.g., Wavelet Scattering Transform, bandpass filtering) can be analyzed using `bash
+uv run python tfr_plotter.py`
 
 ## 🎯 Key Features
 
