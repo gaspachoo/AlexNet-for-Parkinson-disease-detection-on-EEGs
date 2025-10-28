@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 
 import support_func.wavelet_transform as wt
 from support_func.dataset_class import EEGDataset_1D
-from support_func.filters import bandpass_filter, matlab_like_cleaning
+from support_func.filters import SavGol_Wavelet, bandpass_filter
 
 
 def process_and_save(indices, dataset, transform, fs):
@@ -27,7 +27,7 @@ def process_and_save(indices, dataset, transform, fs):
         image_filtered = bandpass_filter(
             image.T, lowcut=0.5, highcut=40.0, fs=fs, order=4
         )
-        image_filtered = matlab_like_cleaning(image_filtered).T
+        image_filtered = SavGol_Wavelet(image_filtered).T
         # image_filtered = savgol_filter(image.T, window_length=11, polyorder=3).T
         sample["eeg"] = image_filtered
         out = transform(sample)

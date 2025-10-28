@@ -26,9 +26,9 @@ def wavelet_denoising(signal, wavelet="db4", level=4):
     return pywt.waverec(denoised_coeffs, wavelet)
 
 
-def modern_cleaning(eeg_data, sfreq=128):
+def MNE_ICA_Wavelet(eeg_data, sfreq=128):
     """
-    Optimized EEG cleaning: band-pass filter, ICA with robust artifact exclusion, and wavelet denoising.
+    MNE ICA + Wavelet Denoising: band-pass filter, ICA with robust artifact exclusion, and wavelet denoising.
 
     Parameters:
         eeg_data: np.ndarray (channels, samples)
@@ -142,11 +142,9 @@ def modern_cleaning(eeg_data, sfreq=128):
     return cleaned_data
 
 
-def matlab_like_cleaning(
-    eeg_data, polyorder=5, window_length=127, wavelet="db2", level=4
-):
+def SavGol_Wavelet(eeg_data, polyorder=5, window_length=127, wavelet="db2", level=4):
     """
-    Translation of MATLAB EEG cleaning using Savitzky-Golay filter and wavelet thresholding.
+    Savitzky-Golay + Wavelet Thresholding: detrending with SavGol filter and wavelet thresholding.
 
     Parameters:
         eeg_data: np.ndarray, shape (channels, samples)

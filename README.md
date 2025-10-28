@@ -15,7 +15,7 @@ The repository is organized as follows:
 - **`tfr_plotter.py`** – Generates visualizations for EEG signal transformations.
 - **`support_func/`** – Utility functions supporting various aspects of the pipeline:
   - **_`dataset_class.py`_** – Contains the class `EEGDataset_1D`.
-  - **_`filters.py`_** – Implements `bandpass_filter` and `matlab_like_cleaning` for signal preprocessing.
+  - **_`filters.py`_** – Implements `bandpass_filter`, `wavelet_denoising`, `SavGol_Wavelet`, `MNE_ICA_Wavelet`, and `SKLFast_ICA` for signal preprocessing.
   - **_`import_data.py`_** – Handles dataset loading and formatting from Iowa and San Diego sources.
   - **_`NN_classes.py`_** – Defines neural network architectures (AlexNetCustom, ResNet18).
   - **_`wavelet_transform.py`_** – Applies Wavelet Scattering Transform (WST) with Kymatio for EEG feature extraction.
@@ -125,15 +125,16 @@ uv run python compare_filtering.py --dataset san_diego --electrode Fz --subject 
 
 **Available filtering techniques compared:**
 
-- **Raw Signal** (unfiltered)
-- **Bandpass Filter** (0.5-40 Hz) - mono-channel
-- **Wavelet Denoising** (db4, level 4) - mono-channel
-- **MATLAB-like Cleaning** (Savitzky-Golay + wavelet thresholding) - mono-channel
-- **Bandpass + Wavelet** (combination) - mono-channel
-- **Modern Cleaning** (MNE ICA + bandpass + wavelet) - multi-channel, all channels loaded
-- **SKL Fast ICA** (FastICA artifact removal) - multi-channel, requires 32 channels
+All techniques start with bandpass filtering (1-40 Hz) for consistency:
 
-> **Note:** Multi-channel techniques (Modern Cleaning, SKL Fast ICA) load all EEG channels and apply ICA across them for optimal artifact removal, then extract the target channel for visualization.
+- **Raw Signal** (unfiltered)
+- **Bandpass Filter** (1-40 Hz) - mono-channel
+- **Bandpass + Wavelet** (db4, level 4 wavelet denoising) - mono-channel
+- **Bandpass + SavGol-Wavelet** (Savitzky-Golay detrending + wavelet thresholding) - mono-channel
+- **MNE ICA + Wavelet** (MNE ICA with 5-criteria artifact detection + wavelet) - multi-channel
+- **SKL Fast ICA** (sklearn FastICA with 6-criteria artifact detection) - multi-channel
+
+> **Note:** Multi-channel techniques (MNE ICA + Wavelet, SKL Fast ICA) load all EEG channels and apply ICA across them for optimal artifact removal, then extract the target channel for visualization.
 
 **Optional arguments:**
 

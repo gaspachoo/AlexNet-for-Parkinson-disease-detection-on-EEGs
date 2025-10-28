@@ -15,10 +15,10 @@ import mne
 import numpy as np
 
 from support_func.filters import (
+    MNE_ICA_Wavelet,
+    SavGol_Wavelet,
     SKLFast_ICA,
     bandpass_filter,
-    matlab_like_cleaning,
-    modern_cleaning,
     wavelet_denoising,
 )
 
@@ -258,22 +258,22 @@ def apply_filtering_techniques(signal, all_channels, target_channel_idx, fs):
     bp_signal = bandpass_filter(signal, lowcut=1.0, highcut=40, fs=fs)
     results["Bandpass + Wavelet"] = wavelet_denoising(bp_signal, wavelet="db4", level=4)
 
-    # 3. Bandpass + MATLAB-like cleaning
+    # 3. Bandpass + Savitzky-Golay + Wavelet thresholding
     bp_signal = bandpass_filter(signal, lowcut=1.0, highcut=40, fs=fs)
     signal_2d = bp_signal.reshape(1, -1)
-    matlab_cleaned = matlab_like_cleaning(signal_2d, polyorder=5, window_length=127)
-    results["Bandpass + MATLAB Cleaning"] = (
-        matlab_cleaned[0] if matlab_cleaned.ndim == 2 else matlab_cleaned
+    savgol_cleaned = SavGol_Wavelet(signal_2d, polyorder=5, window_length=127)
+    results["Bandpass + SavGol-Wavelet"] = (
+        savgol_cleaned[0] if savgol_cleaned.ndim == 2 else savgol_cleaned
     )
 
     # === MULTI-CHANNEL TECHNIQUES ===
-    # Modern cleaning with MNE ICA (applied to all channels)
+    # MNE ICA + Wavelet (applied to all channels)
     if all_channels is not None and all_channels.shape[0] > 1:
         try:
-            mne_cleaned = modern_cleaning(all_channels, sfreq=fs)
-            results["Modern Cleaning (MNE ICA)"] = mne_cleaned[target_channel_idx]
+            mne_cleaned = MNE_ICA_Wavelet(all_channels, sfreq=fs)
+            results["MNE ICA + Wavelet"] = mne_cleaned[target_channel_idx]
         except Exception as e:
-            print(f"Warning: Modern cleaning (MNE ICA) failed: {e}")
+            print(f"Warning: MNE ICA + Wavelet failed: {e}")
 
     # SKL Fast ICA (applied to all channels)
     if all_channels is not None and all_channels.shape[0] > 1:
