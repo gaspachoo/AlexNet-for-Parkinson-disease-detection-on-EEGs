@@ -296,9 +296,9 @@ def load_all_channels_sandiego(data_dir, electrode_list_path, medication=None):
             session_path = os.path.join(sub_path, "ses-hc", "eeg")
             if os.path.exists(session_path):
                 for file in os.listdir(session_path):
-                    if file.endswith(".set"):  # Use .set files for MNE
+                    if file.endswith(".bdf"):  # San Diego uses .bdf files
                         file_path = os.path.join(session_path, file)
-                        raw = mne.io.read_raw_eeglab(
+                        raw = mne.io.read_raw_bdf(
                             file_path, preload=True, verbose=False
                         )
                         data = raw.get_data()  # Shape: (n_channels, n_samples)
@@ -327,9 +327,9 @@ def load_all_channels_sandiego(data_dir, electrode_list_path, medication=None):
                 session_path = os.path.join(sub_path, f"ses-{session}", "eeg")
                 if os.path.exists(session_path):
                     for file in os.listdir(session_path):
-                        if file.endswith(".set"):
+                        if file.endswith(".bdf"):  # San Diego uses .bdf files
                             file_path = os.path.join(session_path, file)
-                            raw = mne.io.read_raw_eeglab(
+                            raw = mne.io.read_raw_bdf(
                                 file_path, preload=True, verbose=False
                             )
                             data = raw.get_data()  # Shape: (n_channels, n_samples)
