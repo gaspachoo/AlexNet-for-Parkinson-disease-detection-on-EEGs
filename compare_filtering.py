@@ -441,7 +441,7 @@ def main():
             signal = all_channels[target_channel_idx]
 
         print(
-            f"✅ All channels loaded: {all_channels.shape[0]} channels, {all_channels.shape[1]} samples, {fs} Hz"
+            f"All channels loaded: {all_channels.shape[0]} channels, {all_channels.shape[1]} samples, {fs} Hz"
         )
         print(f"   Target channel: {args.electrode} (index {target_channel_idx})")
         print(f"   Duration: {len(signal) / fs:.2f} seconds\n")
@@ -451,7 +451,7 @@ def main():
         filtered_results = apply_filtering_techniques(
             signal, all_channels, target_channel_idx, fs
         )
-        print(f"✅ {len(filtered_results)} techniques applied\n")
+        print(f"{len(filtered_results)} techniques applied\n")
 
         # Plot comparison
         print("Generating comparison plot...")
