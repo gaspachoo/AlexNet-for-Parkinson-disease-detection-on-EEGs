@@ -3,6 +3,9 @@ Dataset preprocessing script for EEG data.
 
 This script loads raw EEG data, applies filtering and Wavelet Scattering Transform (WST),
 then saves preprocessed datasets as .pt files for training.
+
+Now supports multi-channel ICA methods by loading all channels, applying ICA,
+then segmenting and extracting the target electrode.
 """
 
 import argparse
@@ -12,34 +15,33 @@ import torch
 from sklearn.model_selection import train_test_split
 
 import support_func.wavelet_transform as wt
-from support_func.dataset_class import EEGDataset_1D
+from support_func.dataset_class import EEGDataset_1D, EEGDataset_MultiChannel
 from support_func.filters import (
+    MNE_ICA_Wavelet,
     SavGol_Wavelet,
+    SKLFast_ICA,
     bandpass_filter,
     wavelet_denoising,
 )
 
 
-def process_and_save(indices, dataset, transform, fs, filter_method="bandpass"):
+def process_and_save(
+    indices, dataset, transform, fs, filter_method="bandpass", use_multichannel=False
+):
     """
     Process EEG samples with specified filtering method and WST.
 
     Parameters:
         indices: Sample indices to process
-        dataset: Raw EEG dataset
+        dataset: Raw EEG dataset (EEGDataset_1D or EEGDataset_MultiChannel)
         transform: WST transform to apply
         fs: Sampling frequency
-        filter_method: Filtering method to use. Options:
-            - "bandpass": Bandpass filter only (1-40 Hz)
-            - "wavelet": Bandpass + Wavelet denoising
-            - "savgol": Bandpass + SavGol-Wavelet
-            - "none": No filtering (raw signal)
+        filter_method: Filtering method to use
+        use_multichannel: If True, filtering was already applied in dataset (ICA methods)
 
-    Note: Multi-channel ICA methods (mne_ica, skl_ica) are not supported yet
-          because they require loading all channels for each segment, which is
-          not compatible with the current dataset structure that segments signals
-          before loading. ICA should ideally be applied to continuous recordings
-          before segmentation.
+    Note: For multi-channel ICA methods, filtering is applied during dataset loading
+          on continuous recordings before segmentation. For mono-channel methods,
+          filtering is applied here to each segment.
 
     Returns:
         all_images: Stacked WST-transformed images
@@ -53,8 +55,11 @@ def process_and_save(indices, dataset, transform, fs, filter_method="bandpass"):
         sample = dataset[idx]  # e.g. {"eeg": shape (60600,), "label": 0/1}
         image = sample["eeg"]
 
-        # Apply selected filtering method
-        if filter_method == "none":
+        # Apply selected filtering method (only for mono-channel pipeline)
+        if use_multichannel:
+            # For ICA methods, filtering was already applied in dataset
+            image_filtered = image.T
+        elif filter_method == "none":
             image_filtered = image.T
         elif filter_method == "bandpass":
             image_filtered = bandpass_filter(
@@ -105,6 +110,17 @@ def preload_dataset(
     medication=None,
     filter_method="bandpass",
 ):
+    """
+    Load and preprocess EEG dataset with specified filtering method.
+
+    For ICA methods (mne_ica, skl_ica), uses EEGDataset_MultiChannel which:
+    1. Loads all EEG channels for each subject
+    2. Applies ICA filtering to continuous recordings
+    3. Segments the filtered data
+    4. Extracts the target electrode
+
+    For mono-channel methods, uses traditional EEGDataset_1D.
+    """
     if mode == "iowa":
         folder_path = "./Data/iowa/IowaData.mat"
         electrode_list_path = "./Data/iowa/electrode_list.txt"
@@ -114,11 +130,48 @@ def preload_dataset(
     else:
         raise ValueError("Expected 'iowa' or 'san_diego'")
 
-    raw_dataset = EEGDataset_1D(
-        folder_path, electrode_name, electrode_list_path, segment_duration, medication
-    )
+    fs = 512 if mode == "san_diego" else 500
 
-    print("Raw dataset loaded, splitting.")
+    # Determine if we need multi-channel dataset (for ICA methods)
+    use_multichannel = filter_method in ["mne_ica", "skl_ica"]
+
+    if use_multichannel:
+        print(f"\n{'=' * 60}")
+        print(f"Using MULTI-CHANNEL pipeline for {filter_method.upper()}")
+        print(f"{'=' * 60}\n")
+
+        # Define filter function based on method
+        if filter_method == "mne_ica":
+            filter_func = MNE_ICA_Wavelet
+        elif filter_method == "skl_ica":
+            filter_func = SKLFast_ICA
+        else:
+            filter_func = None
+
+        # Use multi-channel dataset
+        raw_dataset = EEGDataset_MultiChannel(
+            folder_path,
+            electrode_name,
+            electrode_list_path,
+            segment_duration,
+            filter_func=filter_func,
+            medication=medication,
+        )
+    else:
+        print(f"\n{'=' * 60}")
+        print(f"Using MONO-CHANNEL pipeline for {filter_method.upper()}")
+        print(f"{'=' * 60}\n")
+
+        # Use traditional single-channel dataset
+        raw_dataset = EEGDataset_1D(
+            folder_path,
+            electrode_name,
+            electrode_list_path,
+            segment_duration,
+            medication,
+        )
+
+    print("Dataset loaded, splitting into train/val...")
 
     labels = np.array([raw_dataset[i]["label"] for i in range(len(raw_dataset))])
     indices = np.arange(len(raw_dataset))
@@ -127,18 +180,19 @@ def preload_dataset(
         indices, stratify=labels, test_size=0.2, random_state=42
     )
 
-    print("Applying WST")
-    fs = 512 if mode == "san_diego" else 500
-    transform_wst = wt.WaveletScatteringTransform(
-        segment_duration, fs, J=10, Q=24
-    )  # Change WST hyperparameters
+    print(f"Train: {len(train_idx)} samples, Val: {len(val_idx)} samples")
+    print("\nApplying WST transformation...")
 
-    print("Processing and saving")
+    transform_wst = wt.WaveletScatteringTransform(segment_duration, fs, J=10, Q=24)
+
+    print("Processing train set...")
     train_images, train_labels = process_and_save(
-        train_idx, raw_dataset, transform_wst, fs, filter_method
+        train_idx, raw_dataset, transform_wst, fs, filter_method, use_multichannel
     )
+
+    print("Processing validation set...")
     val_images, val_labels = process_and_save(
-        val_idx, raw_dataset, transform_wst, fs, filter_method
+        val_idx, raw_dataset, transform_wst, fs, filter_method, use_multichannel
     )
 
     train_dataset = list(zip(train_images, train_labels))
@@ -147,16 +201,18 @@ def preload_dataset(
     if save:
         path = "./Datasets_pt/"
         dataset_name = "iowa" if mode == "iowa" else f"sd_{medication or 'onandoff'}"
-        train_path = path + f"train_{dataset_name}_{electrode_name}.pt"
-        val_path = path + f"val_{dataset_name}_{electrode_name}.pt"
+        # Add filter method to filename for clarity
+        filter_suffix = f"_{filter_method}" if filter_method != "bandpass" else ""
+        train_path = path + f"train_{dataset_name}_{electrode_name}{filter_suffix}.pt"
+        val_path = path + f"val_{dataset_name}_{electrode_name}{filter_suffix}.pt"
 
         torch.save(train_dataset, train_path)
         print(
-            f"Saved {train_path} with shape {train_images.shape} and labels shape {train_labels.shape}"
+            f"\nSaved {train_path}\n  Shape: {train_images.shape}, Labels: {train_labels.shape}"
         )
         torch.save(val_dataset, val_path)
         print(
-            f"Saved {val_path} with shape {val_images.shape} and labels shape {val_labels.shape}"
+            f"Saved {val_path}\n  Shape: {val_images.shape}, Labels: {val_labels.shape}"
         )
 
     return train_dataset, val_dataset
@@ -204,8 +260,10 @@ def main():
         "--filter",
         type=str,
         default="bandpass",
-        choices=["none", "bandpass", "wavelet", "savgol"],
-        help="Filtering method to apply (default: 'bandpass'). Options: 'none' (no filtering), 'bandpass' (1-40 Hz), 'wavelet' (bandpass + wavelet denoising), 'savgol' (bandpass + SavGol-Wavelet).",
+        choices=["none", "bandpass", "wavelet", "savgol", "mne_ica", "skl_ica"],
+        help="Filtering method to apply (default: 'bandpass'). "
+        "Mono-channel: 'none', 'bandpass' (1-40 Hz), 'wavelet' (bandpass + wavelet denoising), 'savgol' (bandpass + SavGol-Wavelet). "
+        "Multi-channel ICA: 'mne_ica' (MNE ICA + Wavelet), 'skl_ica' (sklearn FastICA).",
     )
 
     # Parse arguments

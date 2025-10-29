@@ -81,6 +81,14 @@ def main():
         default=15,
         help="Early stopping patience in epochs (default: 15).",
     )
+    parser.add_argument(
+        "--filter",
+        type=str,
+        default="bandpass",
+        choices=["none", "bandpass", "wavelet", "savgol", "mne_ica", "skl_ica"],
+        help="Filtering method used during preprocessing (default: 'bandpass'). "
+        "Must match the filter used when creating the .pt files with dataset_preloader.py.",
+    )
 
     # Parse arguments
     args = parser.parse_args()
@@ -93,9 +101,12 @@ def main():
         # San Diego dataset naming convention: sd_{medication}_{electrode}
         dataset_prefix = f"sd_{args.medication}_{args.electrode}"
 
+    # Add filter method suffix if not using default bandpass
+    filter_suffix = f"_{args.filter}" if args.filter != "bandpass" else ""
+
     # Construct full dataset paths
-    train_dataset_path = f"./Datasets_pt/train_{dataset_prefix}.pt"
-    val_dataset_path = f"./Datasets_pt/val_{dataset_prefix}.pt"
+    train_dataset_path = f"./Datasets_pt/train_{dataset_prefix}{filter_suffix}.pt"
+    val_dataset_path = f"./Datasets_pt/val_{dataset_prefix}{filter_suffix}.pt"
 
     # Verify that dataset files exist
     if not os.path.exists(train_dataset_path):
@@ -103,9 +114,9 @@ def main():
 
         # Build the exact command needed to generate the missing dataset
         if args.mode == "iowa":
-            preload_cmd = f"uv run python dataset_preloader.py --mode {args.mode} --electrode {args.electrode}"
+            preload_cmd = f"uv run python dataset_preloader.py --mode {args.mode} --electrode {args.electrode} --filter {args.filter}"
         else:  # san_diego
-            preload_cmd = f"uv run python dataset_preloader.py --mode {args.mode} --electrode {args.electrode} --medication {args.medication}"
+            preload_cmd = f"uv run python dataset_preloader.py --mode {args.mode} --electrode {args.electrode} --medication {args.medication} --filter {args.filter}"
 
         print("To generate the required dataset files, please run:")
         print(f"   {preload_cmd}\n")
@@ -116,9 +127,9 @@ def main():
 
         # Build the exact command needed to generate the missing dataset
         if args.mode == "iowa":
-            preload_cmd = f"uv run python dataset_preloader.py --mode {args.mode} --electrode {args.electrode}"
+            preload_cmd = f"uv run python dataset_preloader.py --mode {args.mode} --electrode {args.electrode} --filter {args.filter}"
         else:  # san_diego
-            preload_cmd = f"uv run python dataset_preloader.py --mode {args.mode} --electrode {args.electrode} --medication {args.medication}"
+            preload_cmd = f"uv run python dataset_preloader.py --mode {args.mode} --electrode {args.electrode} --medication {args.medication} --filter {args.filter}"
 
         print("To generate the required dataset files, please run:")
         print(f"   {preload_cmd}\n")
@@ -131,9 +142,13 @@ def main():
     val_dataset = torch.load(val_dataset_path)
     print("Datasets loaded successfully.")
 
-    # Compose checkpoint path
-    checkpoint_path = f"./Checkpoints/checkpoint_{args.model}_{dataset_prefix}.pth"
-    final_model_path = f"./Checkpoints/model_{args.model}_{dataset_prefix}.pth"
+    # Compose checkpoint path (include filter method for clarity)
+    checkpoint_path = (
+        f"./Checkpoints/checkpoint_{args.model}_{dataset_prefix}{filter_suffix}.pth"
+    )
+    final_model_path = (
+        f"./Checkpoints/model_{args.model}_{dataset_prefix}{filter_suffix}.pth"
+    )
 
     # Launch training and validation
     print("\nStarting training with configuration:")
@@ -142,6 +157,7 @@ def main():
     print(f"  Electrode: {args.electrode}")
     if args.mode == "san_diego":
         print(f"  Medication: {args.medication}")
+    print(f"  Filter method: {args.filter}")
     print(f"  Epochs: {args.epochs}")
     print(f"  Batch size: {args.batch_size}")
     print(f"  Learning rate: {args.learning_rate}")

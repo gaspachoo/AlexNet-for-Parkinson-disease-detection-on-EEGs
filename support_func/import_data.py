@@ -1,7 +1,8 @@
-import numpy as np
-import h5py
 import os
+
+import h5py
 import mne
+import numpy as np
 
 
 def load_bdf_1D(file_path, electrode_index, segment=False, segment_duration=0, T=None):
@@ -181,3 +182,175 @@ def load_data_sandiego(
 
     print(f"{len(data)} total segments loaded.")
     return data, labels
+
+
+def load_all_channels_iowa(data_dir, electrode_list_path):
+    """
+    Load ALL EEG channels from Iowa dataset for all subjects.
+    Returns continuous recordings BEFORE segmentation to allow ICA preprocessing.
+
+    Returns:
+        all_recordings: List of dictionaries, each containing:
+            - 'data': 2D numpy array (n_channels, n_samples)
+            - 'label': int (0=PD, 1=Control)
+            - 'subject_id': tuple (group_idx, patient_idx)
+        electrode_list: List of electrode names
+        fs: Sampling frequency (500 Hz)
+    """
+    if not os.path.exists(data_dir):
+        raise FileNotFoundError(f"The file {data_dir} does not exist.")
+
+    with open(electrode_list_path, "r", encoding="utf-8") as f:
+        electrode_list = f.read().strip().split()
+
+    fs = 500  # Iowa sampling frequency
+    num_groups = 2  # PD and Control
+    num_patients = 14
+    all_recordings = []
+
+    with h5py.File(data_dir, "r") as f:
+        EEG_data = f["EEG"]
+        n_channels = len(electrode_list)
+
+        # Iterate through groups and patients
+        for group_idx in range(num_groups):
+            for patient_idx in range(num_patients):
+                # Load all channels for this subject
+                subject_data = []
+
+                for electrode_index in range(n_channels):
+                    ch_ref = (
+                        EEG_data[electrode_index][0, 0]
+                        if EEG_data[electrode_index].shape == (1, 1)
+                        else EEG_data[electrode_index][0]
+                    )
+                    ch_data = f[ch_ref]
+
+                    group_ref = (
+                        ch_data[group_idx][0]
+                        if ch_data[group_idx].shape == (1,)
+                        else ch_data[group_idx]
+                    )
+                    group_data = f[group_ref]
+
+                    patient_ref = (
+                        group_data[patient_idx][0]
+                        if group_data[patient_idx].shape == (1,)
+                        else group_data[patient_idx]
+                    )
+                    patient_signal = f[patient_ref][:].flatten()
+                    subject_data.append(patient_signal)
+
+                # Stack all channels: shape (n_channels, n_samples)
+                subject_data = np.array(subject_data)
+
+                all_recordings.append(
+                    {
+                        "data": subject_data,
+                        "label": group_idx,  # 0=PD, 1=Control
+                        "subject_id": (group_idx, patient_idx),
+                    }
+                )
+
+    print(
+        f"Loaded {len(all_recordings)} subjects with {n_channels} channels each (Iowa dataset)"
+    )
+    return all_recordings, electrode_list, fs
+
+
+def load_all_channels_sandiego(data_dir, electrode_list_path, medication=None):
+    """
+    Load ALL EEG channels from San Diego dataset for all subjects.
+    Returns continuous recordings BEFORE segmentation to allow ICA preprocessing.
+
+    Parameters:
+        medication: Optional filter ('on', 'off', or None for both)
+
+    Returns:
+        all_recordings: List of dictionaries, each containing:
+            - 'data': 2D numpy array (n_channels, n_samples)
+            - 'label': int (0=HC, 1=PD_OFF, 2=PD_ON or 0=HC, 1=PD if medication specified)
+            - 'subject_id': str (e.g., 'hc1', 'pd11')
+            - 'session': str (e.g., 'hc', 'off', 'on')
+        electrode_list: List of electrode names
+        fs: Sampling frequency (512 Hz)
+    """
+    with open(electrode_list_path, "r", encoding="utf-8") as f:
+        electrode_list = f.read().strip().split()
+
+    fs = 512
+    all_recordings = []
+    mne.set_log_level("ERROR")
+    T_max = 92160  # Maximum length for consistency
+
+    for sub_folder in os.listdir(data_dir):
+        sub_path = os.path.join(data_dir, sub_folder)
+        if not os.path.isdir(sub_path):
+            continue
+
+        if sub_folder.startswith("sub-hc"):  # Healthy control
+            subject_id = sub_folder.replace("sub-", "")
+            session = "hc"
+            label = 0
+
+            session_path = os.path.join(sub_path, "ses-hc", "eeg")
+            if os.path.exists(session_path):
+                for file in os.listdir(session_path):
+                    if file.endswith(".set"):  # Use .set files for MNE
+                        file_path = os.path.join(session_path, file)
+                        raw = mne.io.read_raw_eeglab(
+                            file_path, preload=True, verbose=False
+                        )
+                        data = raw.get_data()  # Shape: (n_channels, n_samples)
+
+                        # Truncate to T_max if necessary
+                        if data.shape[1] > T_max:
+                            data = data[:, :T_max]
+
+                        all_recordings.append(
+                            {
+                                "data": data,
+                                "label": label,
+                                "subject_id": subject_id,
+                                "session": session,
+                            }
+                        )
+
+        elif sub_folder.startswith("sub-pd"):  # Parkinson's disease
+            subject_id = sub_folder.replace("sub-", "")
+
+            for session, raw_label in [("off", 1), ("on", 2)]:
+                # Skip if medication filter is specified
+                if medication is not None and session != medication:
+                    continue
+
+                session_path = os.path.join(sub_path, f"ses-{session}", "eeg")
+                if os.path.exists(session_path):
+                    for file in os.listdir(session_path):
+                        if file.endswith(".set"):
+                            file_path = os.path.join(session_path, file)
+                            raw = mne.io.read_raw_eeglab(
+                                file_path, preload=True, verbose=False
+                            )
+                            data = raw.get_data()  # Shape: (n_channels, n_samples)
+
+                            # Truncate to T_max if necessary
+                            if data.shape[1] > T_max:
+                                data = data[:, :T_max]
+
+                            # Adjust label if medication is specified
+                            label = 1 if medication is not None else raw_label
+
+                            all_recordings.append(
+                                {
+                                    "data": data,
+                                    "label": label,
+                                    "subject_id": subject_id,
+                                    "session": session,
+                                }
+                            )
+
+    print(
+        f"Loaded {len(all_recordings)} recordings with {len(electrode_list)} channels each (San Diego dataset)"
+    )
+    return all_recordings, electrode_list, fs

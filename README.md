@@ -75,12 +75,16 @@ uv run python dataset_preloader.py --mode san_diego --electrode Fz --medication 
 
 - `--segment_duration`: Segment duration in seconds (default: 5)
 - `--filter`: Filtering method to apply (default: `bandpass`). Options:
-  - `none`: No filtering (raw signal)
-  - `bandpass`: Bandpass filter only (1-40 Hz)
-  - `wavelet`: Bandpass + Wavelet denoising (db4, level 4)
-  - `savgol`: Bandpass + SavGol-Wavelet (Savitzky-Golay + wavelet thresholding)
+  - **Mono-channel methods:**
+    - `none`: No filtering (raw signal)
+    - `bandpass`: Bandpass filter only (1-40 Hz)
+    - `wavelet`: Bandpass + Wavelet denoising (db4, level 4)
+    - `savgol`: Bandpass + SavGol-Wavelet (Savitzky-Golay + wavelet thresholding)
+  - **Multi-channel ICA methods:**
+    - `mne_ica`: MNE ICA with 5-criteria artifact detection + Wavelet denoising
+    - `skl_ica`: sklearn FastICA with 6-criteria artifact detection
 
-> **Note:** Multi-channel ICA methods (MNE ICA, SKL Fast ICA) are not available for dataset preprocessing because they require loading all EEG channels simultaneously for continuous recordings before segmentation. Use `compare_filtering.py` to evaluate ICA techniques on full recordings.
+> **Note:** Multi-channel ICA methods (`mne_ica`, `skl_ica`) load ALL EEG channels for each subject, apply ICA to continuous recordings BEFORE segmentation, then extract the target electrode. This is computationally intensive but provides optimal artifact removal. The filtered datasets are saved with the filter method in the filename (e.g., `train_iowa_AFz_mne_ica.pt`).
 
 ### 3️⃣ Train the model
 
@@ -89,13 +93,23 @@ Train with your chosen configuration:
 **Example with Iowa dataset:**
 
 ```bash
-uv run python main.py --mode iowa --model alexnet --electrode AFz --epochs 200 --batch_size 20 --learning_rate 1e-4 --patience 15
+uv run python main.py --mode iowa --model alexnet --electrode AFz --filter bandpass --epochs 200 --batch_size 20 --learning_rate 1e-4 --patience 15
 ```
 
 **Example with San Diego dataset:**
 
 ```bash
-uv run python main.py --mode san_diego --model resnet --electrode Fz --medication off --epochs 200
+uv run python main.py --mode san_diego --model resnet --electrode Fz --medication off --filter wavelet --epochs 200
+```
+
+**Example with ICA-preprocessed data:**
+
+```bash
+# Train on MNE ICA filtered data
+uv run python main.py --mode iowa --model alexnet --electrode AFz --filter mne_ica --epochs 200
+
+# Train on sklearn FastICA filtered data
+uv run python main.py --mode san_diego --model resnet --electrode Fz --medication off --filter skl_ica --epochs 200
 ```
 
 **Available arguments:**
@@ -104,10 +118,13 @@ uv run python main.py --mode san_diego --model resnet --electrode Fz --medicatio
 - `--model`: Model architecture (`alexnet` or `resnet`)
 - `--electrode`: Electrode name (e.g., `AFz`, `Fz`)
 - `--medication`: Medication status for San Diego (`on` or `off`, default: `on`)
+- `--filter`: Filtering method used in preprocessing (default: `bandpass`). Must match the `--filter` used with `dataset_preloader.py`. Options: `none`, `bandpass`, `wavelet`, `savgol`, `mne_ica`, `skl_ica`
 - `--epochs`: Maximum training epochs (default: 200)
 - `--batch_size`: Batch size (default: 20)
 - `--learning_rate`: Learning rate (default: 1e-4)
 - `--patience`: Early stopping patience (default: 15)
+
+> **Important:** The `--filter` argument must match the filtering method used when preprocessing the dataset with `dataset_preloader.py`. For example, if you preprocessed with `--filter mne_ica`, you must train with `--filter mne_ica`.
 
 ### 4️⃣ Compare filtering techniques (optional)
 
