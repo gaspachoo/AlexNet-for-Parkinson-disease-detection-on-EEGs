@@ -286,20 +286,37 @@ def train_and_validate(
 
         # --- Final confusion matrix visualization ---
         cm = confmat_metric.compute().cpu().numpy()
-        cm_normalized = cm.astype("float") / cm.sum(axis=1, keepdims=True)
+        # Row-normalize with safe division (rows that sum to 0 remain zeros)
+        row_sums = cm.sum(axis=1, keepdims=True)
+        cm_normalized = np.divide(
+            cm, row_sums, out=np.zeros_like(cm, dtype=float), where=row_sums != 0
+        )
 
         plt.figure(figsize=(6, 5))
-        sns.heatmap(
+        ax = sns.heatmap(
             cm_normalized,
             annot=True,
             fmt=".2f",
             cmap="Blues",
             xticklabels=["Control", "PD"],
             yticklabels=["Control", "PD"],
+            cbar=True,
+            linewidths=0,
+            linecolor=None,
         )
-        plt.xlabel("Predicted")
-        plt.ylabel("True")
-        plt.title("Confusion Matrix on Validation Set")
+        # Match visual style to confusion_normalizer.py
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+        # Rotate y tick labels vertically; remove tick marks
+        for lbl in ax.get_yticklabels():
+            lbl.set_rotation(90)
+            lbl.set_va("center")
+        ax.tick_params(length=0)
+
+        ax.set_xlabel("Predicted")
+        ax.set_ylabel("True")
+        ax.set_title("Confusion Matrix on Validation Set")
+        plt.tight_layout()
         plt.show()
 
         # Log confusion matrix to wandb
