@@ -298,6 +298,8 @@ def train_and_validate(
             annot=True,
             fmt=".2f",
             cmap="Blues",
+            vmin=0.0,
+            vmax=1.0,
             xticklabels=["Control", "PD"],
             yticklabels=["Control", "PD"],
             cbar=True,
